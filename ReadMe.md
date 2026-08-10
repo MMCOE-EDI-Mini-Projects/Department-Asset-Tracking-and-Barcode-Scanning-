@@ -240,14 +240,14 @@ Application Layer
 
 ## Team Distribution
 
-| Team | Modules | Owns (DB Entities) |
+| Team | Members | Modules |
 |---|---|---|
-| **Team 1 — Identity & Core Data** | User and role management; Asset master and barcode tagging | Users, Roles, Departments, Locations, Assets, AssetTags |
-| **Team 2 — Intake & Movement** | Barcode label generation and printing; Asset receiving and registration; Asset assignment and transfer | LabelPrintJobs, AssetAssignments, AssetTransfers |
-| **Team 3 — Scanning & Lifecycle Ops** | Barcode scanning and verification; Maintenance and status tracking; Disposal and write-off management | ScanLogs, MaintenanceTickets, DisposalRecords |
-| **Team 4 — Audit & Reporting** | Inventory reconciliation and audit; Reports, analytics, and audit logs | PhysicalVerifications, AuditLogs |
+| **Team 1** | Yash Bhure, Tanishka Wagh, Uday Pawade, Sanskruti Ghavghave | User and Role Management; Asset Master and Barcode Tagging; Reports, Analytics, and Audit Logs |
+| **Team 2** | Vedant Pathak, Arya Joshi, Pranjal Khairnar | Barcode Label Generation and Printing; Barcode Scanning and Verification |
+| **Team 3** | Shreya Rathod, Swayamprabha Badade, Siddiqa Bagwan | Asset Receiving and Registration; Asset Assignment and Transfer |
+| **Team 4** | Viraj Joglekar, Sai Patil, Mayur Patil | Maintenance and Status Tracking; Inventory Reconciliation and Audit; Disposal and Write-off Management |
 
-Team 1 builds first since every other module depends on Users/Assets. Teams 2 and 3 can run in parallel once Team 1's core APIs are stubbed. Team 4 is dependency-heavy and should front-load schema/dashboard design, integrating real data as it comes online.
+> Note: **Disposal and Write-off Management** is currently listed under both Team 3 and Team 4 — worth confirming which team actually owns it (or whether it's intentionally split, e.g. Team 3 handles the request/approval flow and Team 4 handles the reconciliation-driven write-offs) so there's no duplicated or conflicting work.
 
 ## Roadmap
 
