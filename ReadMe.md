@@ -245,7 +245,7 @@ Application Layer
 | **Team 1** | Yash Bhure, Tanishka Wagh, Uday Pawade, Sanskruti Ghavghave | User and Role Management; Asset Master and Barcode Tagging; Reports, Analytics, and Audit Logs |
 | **Team 2** | Vedant Pathak, Arya Joshi, Pranjal Khairnar | Barcode Label Generation and Printing; Barcode Scanning and Verification; Disposal and Write-off Management |
 | **Team 3** | Shreya Rathod, Swayamprabha Badade, Siddiqa Bagwan | Asset Receiving and Registration; Asset Assignment and Transfer |
-| **Team 4** | Viraj Joglekar, Sai Patil, Mayur Patil | Maintenance and Status Tracking; Inventory Reconciliation and Audit |
+| **Team 4** | Viraj Joglekar, Sai Patil, Mayur Kolhe | Maintenance and Status Tracking; Inventory Reconciliation and Audit |
 
 > Note: **Disposal and Write-off Management** is currently listed under both Team 3 and Team 4 — worth confirming which team actually owns it (or whether it's intentionally split, e.g. Team 3 handles the request/approval flow and Team 4 handles the reconciliation-driven write-offs) so there's no duplicated or conflicting work.
 
