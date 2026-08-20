@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Identify Asset</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <nav>
+    <span>Asset Tracker</span>
+    <a href="register.html">Register Asset</a>
+    <a href="identify.html">Identify Asset</a>
+  </nav>
+  <main>
+    <h1>Asset Identification</h1>
+
+    <form id="searchForm" class="card">
+      <h2>Option A: Manual Asset Code Entry</h2>
+      <input type="text" id="assetCode" placeholder="CE-LAB3-042" />
+      <button type="submit">Search Asset</button>
+    </form>
+
+    <form id="ocrForm" class="card">
+      <h2>Option B: Image Upload (OCR)</h2>
+      <input type="file" id="imageInput" accept="image/*" />
+      <button type="submit" id="ocrButton">Upload Asset Code Image</button>
+    </form>
+
+    <p id="msg"></p>
+    <p id="extractedCode"></p>
+
+    <div id="resultCard" class="card" style="display: none;">
+      <h2>Asset Details</h2>
+      <table id="resultTable"></table>
+
+      <div id="disposalSection">
+        <button id="showDisposalBtn" class="danger">Request Disposal</button>
+
+        <form id="disposalForm" style="display: none;">
+          <label for="reason">Disposal Reason</label>
+          <input type="text" id="reason" />
+
+          <label for="disposalMethod">Disposal Method</label>
+          <input type="text" id="disposalMethod" />
+
+          <label for="remarks">Remarks</label>
+          <textarea id="remarks"></textarea>
+
+          <button type="submit" class="danger">Submit Disposal Request</button>
+          <p id="disposalMsg"></p>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/identify.js"></script>
+</body>
+</html>

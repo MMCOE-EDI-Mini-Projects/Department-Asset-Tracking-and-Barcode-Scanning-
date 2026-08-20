@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Register Asset</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <nav>
+    <span>Asset Tracker</span>
+    <a href="register.html">Register Asset</a>
+    <a href="identify.html">Identify Asset</a>
+  </nav>
+  <main>
+    <h1>Asset Registration</h1>
+
+    <form id="registerForm" class="card">
+      <label for="assetCode">Asset Code</label>
+      <input type="text" id="assetCode" placeholder="CE-LAB3-042" required />
+
+      <label for="name">Asset Name</label>
+      <input type="text" id="name" placeholder="Dell OptiPlex" required />
+
+      <label for="category">Category</label>
+      <input type="text" id="category" placeholder="Desktop" />
+
+      <label for="department">Department</label>
+      <select id="department"></select>
+
+      <label for="location">Location</label>
+      <select id="location"></select>
+
+      <label for="make">Make</label>
+      <input type="text" id="make" placeholder="Dell" />
+
+      <label for="model">Model</label>
+      <input type="text" id="model" placeholder="OptiPlex 7090" />
+
+      <label for="serialNumber">Serial Number</label>
+      <input type="text" id="serialNumber" placeholder="DELL12345" />
+
+      <label for="condition">Condition</label>
+      <select id="condition">
+        <option value="new">New</option>
+        <option value="good" selected>Good</option>
+        <option value="fair">Fair</option>
+        <option value="damaged">Damaged</option>
+        <option value="poor">Poor</option>
+      </select>
+
+      <button type="submit">Register Equipment</button>
+      <p id="msg"></p>
+    </form>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/register.js"></script>
+</body>
+</html>
