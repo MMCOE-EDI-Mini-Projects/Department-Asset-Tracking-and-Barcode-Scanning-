@@ -1,0 +1,578 @@
+MODULE 4 :   index.html
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 4 - Asset Receiving & Registration</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+///Header
+    <div class="header">
+        <h1>Asset Management System</h1>
+        <p> Module 4 — Asset Receiving & Registration</p>
+    </div>
+    <div class="form-container">
+        <form id="assetForm">
+            <div class="section">
+                <div class="section-title">
+                    A. Receiving Details
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>
+                            Receiving Type
+                            <span class="required">*</span>
+                        </label>
+                        <select id="receivingType" required>
+                            <option value="">
+                                Select Receiving Type
+                            </option>
+                            <option value="Purchased">
+                                Purchased
+                            </option>
+                            <option value="Transferred">
+                                Transferred
+                            </option>
+                            <option value="Donated">
+                                Donated
+                            </option>
+                            <option value="Returned from Maintenance">
+                                Returned from Maintenance
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Supplier / Source
+                            <span class="required">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="supplier"
+                            placeholder="Enter supplier or source"
+                            required
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Invoice Number
+                        </label>
+                        <input type="text" id="invoiceNumber" placeholder="Enter invoice number">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Receipt Date
+                            <span class="required">*</span>
+                        </label>
+                        <input
+                            type="date" id="receiptDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Quantity
+                            <span class="required">*</span>
+                        </label>
+                        <input
+                            type="number"
+                            id="quantity"
+                            min="1"
+                            placeholder="Enter quantity"
+                            required
+                        >
+                    </div>
+                    <div class="form-group full-width">
+                        <label>
+                            Receiving Remarks
+                        </label>
+                        <textarea
+                            id="receivingRemarks"
+                            placeholder="Enter receiving remarks"
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-title">
+                    B. Asset Details
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>
+                            Asset Name
+                            <span class="required">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="assetName"
+                            placeholder="Enter asset name"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Category
+                            <span class="required">*</span>
+                        </label>
+                        <select id="category" required>
+                            <option value="">
+                                Select Category
+                            </option>
+                            <option value="Laptop">
+                                Laptop
+                            </option>
+                            <option value="Desktop">
+                                Desktop
+                            </option>
+                            <option value="Monitor">
+                                Monitor
+                            </option>
+                            <option value="Printer">
+                                Printer
+                            </option>
+                            <option value="Projector">
+                                Projector
+                            </option>
+                            <option value="Furniture">
+                                Furniture
+                            </option>
+                            <option value="Lab Equipment">
+                                Lab Equipment
+                            </option>
+                            <option value="Other">
+                                Other
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Make / Manufacturer
+                        </label>
+                        <input
+                            type="text"
+                            id="manufacturer"
+                            placeholder="Enter manufacturer"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Model
+                        </label>
+                        <input
+                            type="text"
+                            id="model"
+                            placeholder="Enter model"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Serial Number
+                        </label>
+                        <input
+                            type="text"
+                            id="serialNumber"
+                            placeholder="Enter serial number"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Asset Condition
+                            <span class="required">*</span>
+                        </label>
+                        <select id="condition" required>
+                            <option value="">
+                                Select Condition
+                            </option>
+                            <option value="New">
+                                New
+                            </option>
+                            <option value="Good">
+                                Good
+                            </option>
+                            <option value="Fair">
+                                Fair
+                            </option>
+                            <option value="Damaged">
+                                Damaged
+                            </option>
+                            <option value="Poor">
+                                Poor
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Purchase Date
+                        </label>
+                        <input
+                            type="date"
+                            id="purchaseDate"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Warranty Expiry
+                        </label>
+                        <input
+                            type="date"
+                            id="warrantyExpiry"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Purchase Cost
+                        </label>
+                        <div class="currency-input">
+                            <span class="currency-symbol">
+                                ₹
+                            </span>
+                            <input
+                                type="number"
+                                id="purchaseCost"
+                                placeholder="0.00"
+                                min="0"
+                                step="0.01"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-title">
+                    C. Department & Location
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>
+                            Department
+                            <span class="required">*</span>
+                        </label>
+                        <select id="department" required>
+                            <option value="">
+                                Select Department
+                            </option>
+                            <option value="Computer Science">
+                                Computer Science
+                            </option>
+                            <option value="Information Technology">
+                                Information Technology
+                            </option>
+                            <option value="Electronics">
+                                Electronics
+                            </option>
+                            <option value="Mechanical">
+                                Mechanical
+                            </option>
+                            <option value="Administration">
+                                Administration
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Initial Location
+                            <span class="required">*</span>
+                        </label>
+                        <select id="initialLocation" required>
+                            <option value="">
+                                Select Location
+                            </option>
+                            <option value="Room 101">
+                                Room 101
+                            </option>
+                            <option value="Room 102">
+                                Room 102
+                            </option>
+                            <option value="Computer Lab">
+                                Computer Lab
+                            </option>
+                            <option value="IT Store">
+                                IT Store
+                            </option>
+                            <option value="Main Office">
+                                Main Office
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-title">
+                    D. Additional Information
+                </div>
+                <div class="form-group">
+                    <label>
+                        Remarks / Notes
+                    </label>
+                    <textarea
+                        id="additionalRemarks"
+                        placeholder="Enter additional remarks or notes"
+                    ></textarea>
+                </div>
+            </div>
+            <div class="button-area view-information-area">
+                <button
+                    type="button"
+                    class="view-btn"
+                    onclick="viewInformation()"
+                >
+                    View Information
+                </button>
+            </div>
+            <div
+                class="section system-generated-section"
+                id="systemInformation"
+                style="display: none;"
+            >
+                <div class="section-title">
+                    System Generated Information
+                </div>
+                <div class="system-section">
+                    <div class="system-grid">
+                        <div class="system-card">
+                            <span class="system-label">
+                                Asset ID / Asset Code
+                            </span>
+                            <span
+                                class="system-value"
+                                id="assetCode"
+                            >
+                                Will be generated
+                            </span>
+                        </div>
+                        <div class="system-card">
+                            <span class="system-label">
+                                Receipt ID
+                            </span>
+                            <span
+                                class="system-value"
+                                id="receiptId"
+                            >
+                                Will be generated
+                            </span>
+                        </div>
+                        <div class="system-card">
+                            <span class="system-label">
+                                Status
+                            </span>
+                            <span
+                                class="system-value"
+                                id="assetStatus"
+                            >
+                                <span class="status pending">
+                                    Pending Registration
+                                </span>
+                            </span>
+                        </div>
+                        <div class="system-card">
+                            <span class="system-label">
+                                Created At
+                            </span>
+                            <span
+                                class="system-value"
+                                id="createdAt"
+                            >
+                                Automatic
+                            </span>
+                        </div>
+                        <div class="system-card">
+                            <span class="system-label">
+                                Updated At
+                            </span>
+                            <span
+                                class="system-value"
+                                id="updatedAt"
+                            >
+                                Automatic
+                            </span>
+                        </div>
+                        <div class="system-card">
+                            <span class="system-label">
+                                Registered By
+                            </span>
+                            <span
+                                class="system-value"
+                                id="registeredBy"
+                            >
+                                Logged-in User
+                            </span>
+                        </div>
+                        <div class="system-card">
+                            <span class="system-label">
+                                QR / Barcode Value
+                            </span>
+                            <span
+                                class="system-value"
+                                id="barcodeValue"
+                            >
+                                Will be generated
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="approval-box">
+                    <label>
+                        <input
+                            type="checkbox"
+                            id="approvalRequired"
+                        >
+                        Require approval before asset becomes Available
+                    </label>
+                </div>
+                <div class="button-area system-buttons">
+                    <button
+                        type="button"
+                        class="reset-btn"
+                        onclick="resetForm()"
+                    >
+                        Reset
+                    </button>
+                    <button
+                        type="submit"
+                        class="register-btn"
+                    >
+                        Register Asset
+                    </button>
+                </div>
+            </div>
+        <div
+            class="success-message"
+            id="successMessage"
+        >
+            <h3>
+                ✓ Asset Registered Successfully
+            </h3>
+            <div class="success-grid">
+                <div>
+                    <strong>Asset ID:</strong>
+                    <span id="successAssetId"></span>
+                </div>
+                <div>
+                    <strong>Receipt ID:</strong>
+                    <span id="successReceiptId"></span>
+                </div>
+                <div>
+                    <strong>Status:</strong>
+                    <span id="successStatus"></span>
+                </div>
+                <div>
+                    <strong>Registered By:</strong>
+                    <span id="successRegisteredBy"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const loggedInUser = "Admin User";
+    function generateAssetId() {
+        return "AST-" + Math.floor(100000 + Math.random() * 900000);
+    }
+    function generateReceiptId() {
+        return "REC-" + Math.floor(10000 + Math.random() * 90000);
+    }
+    function generateBarcode(assetId) {
+        return "BAR-" + assetId;
+    }
+    function getCurrentDateTime() {
+        return new Date().toLocaleString();
+    }
+    function viewInformation() {
+        const form = document.getElementById("assetForm");
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        const assetId = generateAssetId();
+        const receiptId = generateReceiptId();
+        const barcode = generateBarcode(assetId);
+        const currentDateTime = getCurrentDateTime();
+        document.getElementById("assetCode").textContent = assetId;
+        document.getElementById("receiptId").textContent = receiptId;
+        document.getElementById("barcodeValue").textContent = barcode;
+        document.getElementById("createdAt").textContent = currentDateTime;
+        document.getElementById("updatedAt").textContent = currentDateTime;
+        document.getElementById("registeredBy").textContent = loggedInUser;
+        document.getElementById("assetStatus").innerHTML =
+            '<span class="status pending">Pending Registration</span>';
+        document.getElementById("systemInformation").style.display = "block";
+        document.getElementById("systemInformation").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+    document.getElementById("assetForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        const approvalRequired =
+            document.getElementById("approvalRequired").checked;
+        const status = approvalRequired ? "Pending" : "Available";
+        const statusElement = document.getElementById("assetStatus");
+        if (status === "Available") {
+            statusElement.innerHTML =
+                '<span class="status available">Available</span>';
+        } else {
+            statusElement.innerHTML =
+                '<span class="status pending">Pending Approval</span>';
+        }
+        document.getElementById("successAssetId").textContent =
+            document.getElementById("assetCode").textContent;
+        document.getElementById("successReceiptId").textContent =
+            document.getElementById("receiptId").textContent;
+        document.getElementById("successStatus").textContent = status;
+        document.getElementById("successRegisteredBy").textContent =
+            loggedInUser;
+        document.getElementById("successMessage").style.display = "block";
+        document.getElementById("successMessage").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    });
+    function resetForm() {
+        document.getElementById("assetForm").reset();
+        document.getElementById("systemInformation").style.display = "none";
+        document.getElementById("assetCode").textContent =
+            "Will be generated";
+        document.getElementById("receiptId").textContent =
+            "Will be generated";
+        document.getElementById("barcodeValue").textContent =
+            "Will be generated";
+        document.getElementById("createdAt").textContent =
+            "Automatic";
+        document.getElementById("updatedAt").textContent =
+            "Automatic";
+        document.getElementById("registeredBy").textContent =
+            loggedInUser;
+        document.getElementById("assetStatus").innerHTML =
+            '<span class="status pending">Pending Registration</span>';
+        document.getElementById("successMessage").style.display = "none";
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
