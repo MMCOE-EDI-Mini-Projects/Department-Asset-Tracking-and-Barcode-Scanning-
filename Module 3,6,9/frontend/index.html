@@ -3,20 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <title>Asset Tracker</title>
+  <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <nav>
-    <span>Asset Tracker</span>
-    <a href="register.html">Register Asset</a>
-    <a href="identify.html">Identify Asset</a>
+    <span class="navbar-title">Department Asset Tracking</span>
+    <div class="navbar-links">
+      <a href="register.html">Register</a>
+      <a href="identify.html">Identify</a>
+      <a href="disposal.html">Disposal Requests</a>
+    </div>
   </nav>
   <main>
-    <h1>Department Asset Tracking and Lifecycle Management System</h1>
-    <p>Use the navigation above to register a new asset or identify an existing one.</p>
-    <div class="home-buttons">
-      <a href="register.html">Register Asset</a>
-      <a href="identify.html">Identify Asset</a>
+    <h1>Welcome to Asset Tracker</h1>
+    <p>Register new equipment, identify existing equipment by code or photo, and manage disposal requests.</p>
+
+    <div class="card-grid">
+      <a href="register.html" class="dash-card">
+        <div class="icon">▣</div>
+        <h3>Register Asset</h3>
+        <p>Add a new piece of equipment to the system.</p>
+      </a>
+      <a href="identify.html" class="dash-card">
+        <div class="icon">◉</div>
+        <h3>Identify Asset</h3>
+        <p>Search by asset code, or upload a photo to run OCR.</p>
+      </a>
+      <a href="disposal.html" class="dash-card">
+        <div class="icon">♻</div>
+        <h3>Disposal Requests</h3>
+        <p>Review, approve, and finalize disposal of equipment.</p>
+      </a>
     </div>
   </main>
 </body>

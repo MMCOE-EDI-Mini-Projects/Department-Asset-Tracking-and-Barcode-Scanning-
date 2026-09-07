@@ -3,18 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <title>Register Asset</title>
+  <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <nav>
-    <span>Asset Tracker</span>
-    <a href="register.html">Register Asset</a>
-    <a href="identify.html">Identify Asset</a>
+    <span class="navbar-title">Department Asset Tracking</span>
+    <div class="navbar-links">
+      <a href="index.html">Dashboard</a>
+      <a href="register.html">Register</a>
+      <a href="identify.html">Identify</a>
+      <a href="disposal.html">Disposal Requests</a>
+    </div>
   </nav>
   <main>
     <h1>Asset Registration</h1>
 
-    <form id="registerForm" class="card">
+    <div id="msg" class="banner"></div>
+
+    <form id="registerForm" class="form-card">
       <label for="assetCode">Asset Code</label>
       <input type="text" id="assetCode" placeholder="CE-LAB3-042" required />
 
@@ -22,22 +29,25 @@
       <input type="text" id="name" placeholder="Dell OptiPlex" required />
 
       <label for="category">Category</label>
-      <input type="text" id="category" placeholder="Desktop" />
+      <input type="text" id="category" placeholder="Desktop" required />
 
       <label for="department">Department</label>
-      <select id="department"></select>
+      <select id="department" required></select>
 
       <label for="location">Location</label>
-      <select id="location"></select>
+      <select id="location" required></select>
 
       <label for="make">Make</label>
-      <input type="text" id="make" placeholder="Dell" />
+      <input type="text" id="make" placeholder="Dell" required />
 
       <label for="model">Model</label>
-      <input type="text" id="model" placeholder="OptiPlex 7090" />
+      <input type="text" id="model" placeholder="OptiPlex 7090" required />
 
       <label for="serialNumber">Serial Number</label>
-      <input type="text" id="serialNumber" placeholder="DELL12345" />
+      <input type="text" id="serialNumber" placeholder="DELL12345" required />
+
+      <label for="purchaseDate">Purchase Date</label>
+      <input type="date" id="purchaseDate" required />
 
       <label for="condition">Condition</label>
       <select id="condition">
@@ -48,8 +58,7 @@
         <option value="poor">Poor</option>
       </select>
 
-      <button type="submit">Register Equipment</button>
-      <p id="msg"></p>
+      <button type="submit" class="btn-primary">Register Equipment</button>
     </form>
   </main>
 
