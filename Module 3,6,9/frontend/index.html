@@ -1,41 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Asset Tracker</title>
-  <link rel="stylesheet" href="css/variables.css" />
-  <link rel="stylesheet" href="css/style.css" />
-</head>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Asset Tracker</title>
+<link rel="stylesheet" href="css/variables.css"><link rel="stylesheet" href="css/style.css"></head>
 <body>
-  <nav>
-    <span class="navbar-title">Department Asset Tracking</span>
-    <div class="navbar-links">
-      <a href="register.html">Register</a>
-      <a href="identify.html">Identify</a>
-      <a href="disposal.html">Disposal Requests</a>
-    </div>
-  </nav>
-  <main>
-    <h1>Welcome to Asset Tracker</h1>
-    <p>Register new equipment, identify existing equipment by code or photo, and manage disposal requests.</p>
-
-    <div class="card-grid">
-      <a href="register.html" class="dash-card">
-        <div class="icon">▣</div>
-        <h3>Register Asset</h3>
-        <p>Add a new piece of equipment to the system.</p>
-      </a>
-      <a href="identify.html" class="dash-card">
-        <div class="icon">◉</div>
-        <h3>Identify Asset</h3>
-        <p>Search by asset code, or upload a photo to run OCR.</p>
-      </a>
-      <a href="disposal.html" class="dash-card">
-        <div class="icon">♻</div>
-        <h3>Disposal Requests</h3>
-        <p>Review, approve, and finalize disposal of equipment.</p>
-      </a>
-    </div>
-  </main>
-</body>
-</html>
+<nav id="nav"></nav>
+<main>
+<h1>Welcome to Asset Tracker</h1>
+<p>Register, identify, and manage the lifecycle of department equipment.</p>
+<div class="card-grid">
+  <a href="register.html" class="dash-card"><h3>Register Asset</h3><p>Add new equipment.</p></a>
+  <a href="identify.html" class="dash-card"><h3>Identify Asset</h3><p>Search by code or photo.</p></a>
+  <a href="disposal.html" class="dash-card"><h3>Disposal Requests</h3><p>Review and approve requests.</p></a>
+  <a href="reports.html" class="dash-card"><h3>Reports</h3><p>Asset counts by status, category, department.</p></a>
+</div>
+</main>
+<script src="nav.js"></script><script>renderNav("index.html");</script>
+</body></html>

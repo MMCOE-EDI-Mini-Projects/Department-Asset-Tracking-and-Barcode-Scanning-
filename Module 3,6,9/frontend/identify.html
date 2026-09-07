@@ -1,67 +1,70 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Identify Asset</title>
-  <link rel="stylesheet" href="css/variables.css" />
-  <link rel="stylesheet" href="css/style.css" />
-</head>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Identify Asset</title>
+<link rel="stylesheet" href="css/variables.css"><link rel="stylesheet" href="css/style.css"></head>
 <body>
-  <nav>
-    <span class="navbar-title">Department Asset Tracking</span>
-    <div class="navbar-links">
-      <a href="index.html">Dashboard</a>
-      <a href="register.html">Register</a>
-      <a href="identify.html">Identify</a>
-      <a href="disposal.html">Disposal Requests</a>
-    </div>
-  </nav>
-  <main>
-    <h1>Asset Identification</h1>
-
-    <div id="msg" class="banner"></div>
-
-    <form id="searchForm" class="form-card">
-      <h3>Option A: Manual Asset Code Entry</h3>
-      <input type="text" id="assetCode" placeholder="CE-LAB3-042" />
-      <button type="submit" class="btn-primary">Search Asset</button>
+<nav id="nav"></nav>
+<main>
+<h1>Asset Identification</h1>
+<div id="msg" class="banner"></div>
+<form id="searchForm" class="form-card"><h3>Option A: Manual Asset Code Entry</h3>
+  <input type="text" id="assetCode" placeholder="CE-LAB3-042"><button type="submit" class="btn-primary">Search Asset</button></form>
+<form id="ocrForm" class="form-card"><h3>Option B: Image Upload (OCR)</h3>
+  <input type="file" id="imageInput" accept="image/*"><button type="submit" id="ocrButton" class="btn-primary">Upload Asset Code Image</button>
+  <p id="extractedCode" style="font-size:13px"></p></form>
+<div id="resultCard" class="form-card" style="display:none">
+  <h3>Asset Details</h3><table id="resultTable"></table>
+  <div style="margin-top:16px">
+    <button id="showDisposalBtn" class="btn-danger">Request Disposal</button>
+    <form id="disposalForm" style="display:none;margin-top:16px">
+      <label>Requested By</label><input type="text" id="requestedBy" required>
+      <label>Disposal Reason</label><input type="text" id="reason" required>
+      <label>Disposal Method</label><input type="text" id="disposalMethod" required>
+      <label>Remarks (optional)</label><textarea id="remarks"></textarea>
+      <button type="submit" class="btn-danger">Submit Disposal Request</button>
+      <p id="disposalMsg" style="font-size:13px;margin-top:8px"></p>
     </form>
-
-    <form id="ocrForm" class="form-card">
-      <h3>Option B: Image Upload (OCR)</h3>
-      <input type="file" id="imageInput" accept="image/*" />
-      <button type="submit" id="ocrButton" class="btn-primary">Upload Asset Code Image</button>
-      <p id="extractedCode" style="font-size: 13px; color: var(--color-text-secondary);"></p>
-    </form>
-
-    <div id="resultCard" class="form-card" style="display: none;">
-      <h3>Asset Details</h3>
-      <table id="resultTable"></table>
-
-      <div id="disposalSection" style="margin-top: 16px;">
-        <button id="showDisposalBtn" class="btn-danger">Request Disposal</button>
-
-        <form id="disposalForm" style="display: none; margin-top: 16px;">
-          <label for="requestedBy">Requested By</label>
-          <input type="text" id="requestedBy" placeholder="Your name" required />
-
-          <label for="reason">Disposal Reason</label>
-          <input type="text" id="reason" placeholder="e.g. End of useful life" required />
-
-          <label for="disposalMethod">Disposal Method</label>
-          <input type="text" id="disposalMethod" placeholder="e.g. Scrap, Donation" required />
-
-          <label for="remarks">Remarks (optional)</label>
-          <textarea id="remarks"></textarea>
-
-          <button type="submit" class="btn-danger">Submit Disposal Request</button>
-          <p id="disposalMsg" style="font-size: 13px; margin-top: 8px;"></p>
-        </form>
-      </div>
-    </div>
-  </main>
-
-  <script src="js/api.js"></script>
-  <script src="js/identify.js"></script>
-</body>
-</html>
+  </div>
+</div>
+</main>
+<script src="nav.js"></script><script src="js/api.js"></script>
+<script>
+renderNav("identify.html");
+let currentAssetCode = null;
+function statusPill(s){return `<span class="pill ${s==='disposed'?'pill-success':'pill-info'}">${s}</span>`;}
+function renderAsset(a) {
+  currentAssetCode = a.asset_code;
+  const rows = [["Asset Code",a.asset_code],["Name",a.name],["Category",a.category],["Make",a.make],["Model",a.model],["Serial Number",a.serial_number],["Condition",a.asset_condition],["Status",statusPill(a.status)]];
+  document.getElementById("resultTable").innerHTML = rows.map(([l,v])=>`<tr><td>${l}</td><td>${v||"-"}</td></tr>`).join("");
+  document.getElementById("resultCard").style.display = "block";
+  document.getElementById("disposalForm").style.display = "none";
+  document.getElementById("showDisposalBtn").style.display = a.status==="disposed" ? "none" : "inline-block";
+}
+document.getElementById("searchForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try { renderAsset(await apiSearchAssetByCode(document.getElementById("assetCode").value)); }
+  catch (err) { document.getElementById("msg").className="banner visible banner-error"; document.getElementById("msg").textContent=err.message; document.getElementById("resultCard").style.display="none"; }
+});
+document.getElementById("ocrForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const file = document.getElementById("imageInput").files[0]; if (!file) return;
+  const btn = document.getElementById("ocrButton"); btn.disabled = true; btn.textContent = "Running OCR...";
+  try {
+    const result = await apiSearchAssetByImage(file);
+    document.getElementById("extractedCode").textContent = `OCR extracted: ${result.extractedCode}`;
+    renderAsset(result.asset);
+  } catch (err) { document.getElementById("msg").className="banner visible banner-error"; document.getElementById("msg").textContent=err.message; }
+  finally { btn.disabled=false; btn.textContent="Upload Asset Code Image"; }
+});
+document.getElementById("showDisposalBtn").addEventListener("click", () => {
+  document.getElementById("disposalForm").style.display = "block";
+  document.getElementById("showDisposalBtn").style.display = "none";
+});
+document.getElementById("disposalForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const dm = document.getElementById("disposalMsg");
+  try {
+    const r = await apiRequestDisposal({assetCode: currentAssetCode, requestedBy: document.getElementById("requestedBy").value, reason: document.getElementById("reason").value, disposalMethod: document.getElementById("disposalMethod").value, remarks: document.getElementById("remarks").value});
+    dm.style.color = "var(--color-success-text)"; dm.textContent = `Disposal request submitted. Status: ${r.status}`;
+  } catch (err) { dm.style.color = "var(--color-error-text)"; dm.textContent = err.message; }
+});
+</script>
+</body></html>

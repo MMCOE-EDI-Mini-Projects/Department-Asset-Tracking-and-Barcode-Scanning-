@@ -1,34 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Disposal Requests</title>
-  <link rel="stylesheet" href="css/variables.css" />
-  <link rel="stylesheet" href="css/style.css" />
-</head>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Disposal Requests</title>
+<link rel="stylesheet" href="css/variables.css"><link rel="stylesheet" href="css/style.css"></head>
 <body>
-  <nav>
-    <span class="navbar-title">Department Asset Tracking</span>
-    <div class="navbar-links">
-      <a href="index.html">Dashboard</a>
-      <a href="register.html">Register</a>
-      <a href="identify.html">Identify</a>
-      <a href="disposal.html">Disposal Requests</a>
-    </div>
-  </nav>
-  <main>
-    <h1>Disposal Requests</h1>
-    <p>Module 9 — review pending requests, approve them, then finalize disposal.</p>
-
-    <div id="msg" class="banner"></div>
-
-    <div class="form-card">
-      <h3>All Requests</h3>
-      <div id="requestList">Loading...</div>
-    </div>
-  </main>
-
-  <script src="js/api.js"></script>
-  <script src="js/disposal.js"></script>
-</body>
-</html>
+<nav id="nav"></nav>
+<main>
+<h1>Disposal Requests</h1>
+<p>Approve and finalize requests. Approving/disposing requires a dept_head or asset_admin login.</p>
+<div id="msg" class="banner"></div>
+<div class="form-card"><h3>All Requests</h3><div id="requestList">Loading...</div></div>
+</main>
+<script src="nav.js"></script><script src="js/api.js"></script>
+<script>
+renderNav("disposal.html");
+const requestList = document.getElementById("requestList"), msg = document.getElementById("msg");
+function showBanner(t,ty){msg.textContent=t;msg.className=`banner visible banner-${ty}`;setTimeout(()=>msg.className="banner",4000);}
+function statusPill(s){return `<span class="pill ${s==='pending'?'pill-info':'pill-success'}">${s}</span>`;}
+function actionButtons(r){
+  if(r.status==="pending") return `<button class="btn-primary" style="width:auto;padding:9px 18px;font-size:13px" data-action="approve" data-id="${r.request_id}">Approve</button>`;
+  if(r.status==="approved") return `<button class="btn-danger" data-action="dispose" data-id="${r.request_id}">Mark Disposed</button>`;
+  return "";
+}
+async function loadRequests() {
+  if (!localStorage.getItem("token")) {
+    requestList.innerHTML = '<p>You need to <a href="login.html">log in</a> to view or act on disposal requests.</p>';
+    return;
+  }
+  try {
+    const requests = await apiListDisposalRequests();
+    if (requests.length===0) { requestList.innerHTML = "<p>No disposal requests yet.</p>"; return; }
+    requestList.innerHTML = requests.map(r => `
+      <div class="request-row">
+        <div><span style="font-weight:bold">${r.asset_code}</span> &mdash; ${r.asset_name}<br>
+          <span style="color:var(--color-text-secondary)">Requested by ${r.requested_by} &mdash; ${r.reason} (${r.disposal_method})
+          ${r.approved_by ? `<br>Approved by ${r.approved_by}` : ""}</span> ${statusPill(r.status)}</div>
+        <div>${actionButtons(r)}</div>
+      </div>`).join("");
+  } catch (err) { requestList.innerHTML = ""; showBanner(err.message, "error"); }
+}
+requestList.addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-action]"); if (!btn) return;
+  const { action, id } = btn.dataset; btn.disabled = true;
+  try {
+    if (action==="approve") { await apiApproveDisposal(id); showBanner("Request approved.", "success"); }
+    else if (action==="dispose") { await apiDisposeRequest(id); showBanner("Asset marked as disposed.", "success"); }
+    await loadRequests();
+  } catch (err) { showBanner(err.message, "error"); btn.disabled = false; }
+});
+loadRequests();
+</script>
+</body></html>

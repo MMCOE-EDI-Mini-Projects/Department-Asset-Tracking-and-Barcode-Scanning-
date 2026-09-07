@@ -1,0 +1,11 @@
+-- =====================================================
+-- Week 3: authentication
+-- No schema change needed here — the `users` table already existed
+-- in your original schema.sql. It was just never populated, because
+-- password_hash values need to be generated with bcrypt in code,
+-- not written as plain SQL.
+--
+-- Run backend/src/scripts/seed_users.js instead of a .sql file for
+-- this (see README). This file exists only so the migration order
+-- stays documented and every week has a matching entry.
+-- =====================================================
