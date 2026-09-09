@@ -1,23 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Asset Tracker</title>
-  <link rel="stylesheet" href="css/style.css" />
-</head>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Asset Tracker</title>
+<link rel="stylesheet" href="css/variables.css"><link rel="stylesheet" href="css/style.css"></head>
 <body>
-  <nav>
-    <span>Asset Tracker</span>
-    <a href="register.html">Register Asset</a>
-    <a href="identify.html">Identify Asset</a>
-  </nav>
-  <main>
-    <h1>Department Asset Tracking and Lifecycle Management System</h1>
-    <p>Use the navigation above to register a new asset or identify an existing one.</p>
-    <div class="home-buttons">
-      <a href="register.html">Register Asset</a>
-      <a href="identify.html">Identify Asset</a>
-    </div>
-  </main>
-</body>
-</html>
+<nav id="nav"></nav>
+<main>
+<h1>Welcome to Asset Tracker</h1>
+<p>Register, identify, and manage the lifecycle of department equipment.</p>
+<div class="card-grid">
+  <a href="register.html" class="dash-card"><h3>Register Asset</h3><p>Add new equipment.</p></a>
+  <a href="identify.html" class="dash-card"><h3>Identify Asset</h3><p>Search by code or photo.</p></a>
+  <a href="disposal.html" class="dash-card"><h3>Disposal Requests</h3><p>Review and approve requests.</p></a>
+  <a href="reports.html" class="dash-card"><h3>Reports</h3><p>Asset counts by status, category, department.</p></a>
+</div>
+</main>
+<script src="nav.js"></script><script>renderNav("index.html");</script>
+</body></html>

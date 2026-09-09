@@ -1,59 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Register Asset</title>
-  <link rel="stylesheet" href="css/style.css" />
-</head>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Register Asset</title>
+<link rel="stylesheet" href="css/variables.css"><link rel="stylesheet" href="css/style.css"></head>
 <body>
-  <nav>
-    <span>Asset Tracker</span>
-    <a href="register.html">Register Asset</a>
-    <a href="identify.html">Identify Asset</a>
-  </nav>
-  <main>
-    <h1>Asset Registration</h1>
-
-    <form id="registerForm" class="card">
-      <label for="assetCode">Asset Code</label>
-      <input type="text" id="assetCode" placeholder="CE-LAB3-042" required />
-
-      <label for="name">Asset Name</label>
-      <input type="text" id="name" placeholder="Dell OptiPlex" required />
-
-      <label for="category">Category</label>
-      <input type="text" id="category" placeholder="Desktop" />
-
-      <label for="department">Department</label>
-      <select id="department"></select>
-
-      <label for="location">Location</label>
-      <select id="location"></select>
-
-      <label for="make">Make</label>
-      <input type="text" id="make" placeholder="Dell" />
-
-      <label for="model">Model</label>
-      <input type="text" id="model" placeholder="OptiPlex 7090" />
-
-      <label for="serialNumber">Serial Number</label>
-      <input type="text" id="serialNumber" placeholder="DELL12345" />
-
-      <label for="condition">Condition</label>
-      <select id="condition">
-        <option value="new">New</option>
-        <option value="good" selected>Good</option>
-        <option value="fair">Fair</option>
-        <option value="damaged">Damaged</option>
-        <option value="poor">Poor</option>
-      </select>
-
-      <button type="submit">Register Equipment</button>
-      <p id="msg"></p>
-    </form>
-  </main>
-
-  <script src="js/api.js"></script>
-  <script src="js/register.js"></script>
-</body>
-</html>
+<nav id="nav"></nav>
+<main>
+<h1>Asset Registration</h1>
+<div id="msg" class="banner"></div>
+<form id="registerForm" class="form-card">
+  <label>Asset Code</label><input type="text" id="assetCode" placeholder="CE-LAB3-042" required>
+  <label>Asset Name</label><input type="text" id="name" placeholder="Dell OptiPlex" required>
+  <label>Category</label><input type="text" id="category" placeholder="Desktop" required>
+  <label>Department</label><select id="department" required></select>
+  <label>Location</label><select id="location" required></select>
+  <label>Make</label><input type="text" id="make" placeholder="Dell" required>
+  <label>Model</label><input type="text" id="model" placeholder="OptiPlex 7090" required>
+  <label>Serial Number</label><input type="text" id="serialNumber" placeholder="DELL12345" required>
+  <label>Condition</label>
+  <select id="condition"><option value="new">New</option><option value="good" selected>Good</option><option value="fair">Fair</option><option value="damaged">Damaged</option><option value="poor">Poor</option></select>
+  <button type="submit" class="btn-primary">Register Equipment</button>
+</form>
+</main>
+<script src="nav.js"></script><script src="js/api.js"></script>
+<script>
+renderNav("register.html");
+const form = document.getElementById("registerForm"), msg = document.getElementById("msg");
+const dept = document.getElementById("department"), loc = document.getElementById("location");
+(async () => {
+  const [d,l] = await Promise.all([apiGetDepartments(), apiGetLocations()]);
+  dept.innerHTML = '<option value="">Select department</option>' + d.map(x=>`<option value="${x.department_id}">${x.name}</option>`).join("");
+  loc.innerHTML = '<option value="">Select location</option>' + l.map(x=>`<option value="${x.location_id}">${x.name}</option>`).join("");
+})();
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!dept.value || !loc.value) { msg.className="banner visible banner-error"; msg.textContent="Department and location are required."; return; }
+  try {
+    const asset = await apiRegisterAsset({
+      assetCode: document.getElementById("assetCode").value, name: document.getElementById("name").value,
+      category: document.getElementById("category").value, departmentId: dept.value, locationId: loc.value,
+      make: document.getElementById("make").value, model: document.getElementById("model").value,
+      serialNumber: document.getElementById("serialNumber").value, condition: document.getElementById("condition").value,
+    });
+    msg.className="banner visible banner-success"; msg.textContent=`Asset "${asset.asset_code}" registered successfully.`;
+    form.reset();
+  } catch (err) { msg.className="banner visible banner-error"; msg.textContent=err.message; }
+});
+</script>
+</body></html>

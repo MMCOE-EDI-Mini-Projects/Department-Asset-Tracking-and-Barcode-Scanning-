@@ -1,0 +1,39 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reports</title>
+<link rel="stylesheet" href="css/variables.css"><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<nav id="nav"></nav>
+<main>
+<h1>Reports</h1>
+<p>Basic asset and disposal counts. Requires login.</p>
+<div id="msg" class="banner"></div>
+<div id="content">Loading...</div>
+</main>
+<script src="nav.js"></script><script src="js/api.js"></script>
+<script>
+renderNav("reports.html");
+function section(title, rows, labelKey, countKey) {
+  const body = rows.map(r => `<div class="stat-row"><span>${r[labelKey]}</span><span>${r[countKey]}</span></div>`).join("");
+  return `<div class="form-card"><h3>${title}</h3>${body || "<p>No data.</p>"}</div>`;
+}
+(async () => {
+  const content = document.getElementById("content");
+  if (!localStorage.getItem("token")) {
+    content.innerHTML = '<p>You need to <a href="login.html">log in</a> to view reports.</p>';
+    return;
+  }
+  try {
+    const r = await apiGetReportsSummary();
+    content.innerHTML =
+      `<div class="form-card"><h3>Total Assets</h3><p style="font-size:28px;color:var(--color-text-primary)">${r.totalAssets}</p></div>` +
+      section("By Status", r.byStatus, "status", "count") +
+      section("By Category", r.byCategory, "category", "count") +
+      section("By Department", r.byDepartment, "department", "count") +
+      section("Disposal Requests By Status", r.disposalByStatus, "status", "count");
+  } catch (err) {
+    document.getElementById("msg").className = "banner visible banner-error";
+    document.getElementById("msg").textContent = err.message;
+    content.innerHTML = "";
+  }
+})();
+</script>
+</body></html>
