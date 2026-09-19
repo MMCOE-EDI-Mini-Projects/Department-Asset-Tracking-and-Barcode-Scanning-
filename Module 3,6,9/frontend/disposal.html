@@ -1,47 +1,114 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Disposal Requests</title>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Disposal & Write-off Requests</title>
 <link rel="stylesheet" href="css/variables.css"><link rel="stylesheet" href="css/style.css"></head>
 <body>
 <nav id="nav"></nav>
 <main>
-<h1>Disposal Requests</h1>
-<p>Approve and finalize requests. Approving/disposing requires a dept_head or asset_admin login.</p>
+<h1>Disposal & Write-off Management</h1>
+<p>Approve and finalize physical disposal or financial write-off requests. Requires a dept_head or asset_admin login.</p>
 <div id="msg" class="banner"></div>
-<div class="form-card"><h3>All Requests</h3><div id="requestList">Loading...</div></div>
+<div class="form-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <h3 style="margin:0">Requests</h3>
+    <div>
+      <label style="display:inline;margin-right:8px;font-weight:normal;font-size:14px">Filter:</label>
+      <select id="typeFilter" style="width:auto;display:inline-block;padding:6px 12px;font-size:13px">
+        <option value="all">All Requests</option>
+        <option value="disposal">Physical Disposal</option>
+        <option value="write_off">Financial Write-off</option>
+      </select>
+    </div>
+  </div>
+  <div id="requestList">Loading...</div>
+</div>
 </main>
 <script src="nav.js"></script><script src="js/api.js"></script>
 <script>
 renderNav("disposal.html");
 const requestList = document.getElementById("requestList"), msg = document.getElementById("msg");
+let allRequests = [];
+
 function showBanner(t,ty){msg.textContent=t;msg.className=`banner visible banner-${ty}`;setTimeout(()=>msg.className="banner",4000);}
-function statusPill(s){return `<span class="pill ${s==='pending'?'pill-info':'pill-success'}">${s}</span>`;}
+
+function statusPill(s){
+  if (s==='disposed') return `<span class="pill pill-success">disposed</span>`;
+  if (s==='written_off') return `<span class="pill pill-warning" style="background:#fff3cd;color:#856404;border:1px solid #ffeeba">written_off</span>`;
+  if (s==='approved') return `<span class="pill pill-info" style="background:#e2e3e5;color:#383d41">approved</span>`;
+  return `<span class="pill pill-info">${s}</span>`;
+}
+
+function typeBadge(t){
+  if (t === 'write_off') return `<span class="pill" style="background:#e0f2fe;color:#0369a1;font-weight:600">Write-off</span>`;
+  return `<span class="pill" style="background:#f1f5f9;color:#475569">Disposal</span>`;
+}
+
 function actionButtons(r){
-  if(r.status==="pending") return `<button class="btn-primary" style="width:auto;padding:9px 18px;font-size:13px" data-action="approve" data-id="${r.request_id}">Approve</button>`;
-  if(r.status==="approved") return `<button class="btn-danger" data-action="dispose" data-id="${r.request_id}">Mark Disposed</button>`;
+  if (r.status === "pending") {
+    return `<button class="btn-primary" style="width:auto;padding:7px 14px;font-size:13px" data-action="approve" data-id="${r.request_id}">Approve</button>`;
+  }
+  if (r.status === "approved") {
+    if (r.request_type === "write_off") {
+      return `<button class="btn-danger" style="width:auto;padding:7px 14px;font-size:13px;background-color:#d97706;border-color:#b45309" data-action="write-off" data-id="${r.request_id}">Mark Written Off</button>`;
+    } else {
+      return `<button class="btn-danger" style="width:auto;padding:7px 14px;font-size:13px" data-action="dispose" data-id="${r.request_id}">Mark Disposed</button>`;
+    }
+  }
   return "";
 }
+
+function renderRequests() {
+  const filter = document.getElementById("typeFilter").value;
+  const filtered = allRequests.filter(r => {
+    if (filter === "all") return true;
+    const itemType = r.request_type || "disposal";
+    return itemType === filter;
+  });
+
+  if (filtered.length === 0) {
+    requestList.innerHTML = "<p>No matching requests found.</p>";
+    return;
+  }
+
+  requestList.innerHTML = filtered.map(r => `
+    <div class="request-row" style="padding:14px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div>
+        <span style="font-weight:bold">${r.asset_code}</span> &mdash; ${r.asset_name} ${typeBadge(r.request_type)} ${statusPill(r.status)}<br>
+        <span style="color:var(--color-text-secondary);font-size:13px">
+          Requested by <strong>${r.requested_by}</strong> &mdash; Reason: ${r.reason} (${r.disposal_method})
+          ${r.book_value ? ` | <strong>Book Value:</strong> $${parseFloat(r.book_value).toFixed(2)}` : ""}
+          ${r.approved_by ? `<br>Approved by ${r.approved_by}` : ""}
+        </span>
+      </div>
+      <div>${actionButtons(r)}</div>
+    </div>`).join("");
+}
+
 async function loadRequests() {
   if (!localStorage.getItem("token")) {
-    requestList.innerHTML = '<p>You need to <a href="login.html">log in</a> to view or act on disposal requests.</p>';
+    requestList.innerHTML = '<p>You need to <a href="login.html">log in</a> to view or act on disposal and write-off requests.</p>';
     return;
   }
   try {
-    const requests = await apiListDisposalRequests();
-    if (requests.length===0) { requestList.innerHTML = "<p>No disposal requests yet.</p>"; return; }
-    requestList.innerHTML = requests.map(r => `
-      <div class="request-row">
-        <div><span style="font-weight:bold">${r.asset_code}</span> &mdash; ${r.asset_name}<br>
-          <span style="color:var(--color-text-secondary)">Requested by ${r.requested_by} &mdash; ${r.reason} (${r.disposal_method})
-          ${r.approved_by ? `<br>Approved by ${r.approved_by}` : ""}</span> ${statusPill(r.status)}</div>
-        <div>${actionButtons(r)}</div>
-      </div>`).join("");
+    allRequests = await apiListDisposalRequests();
+    renderRequests();
   } catch (err) { requestList.innerHTML = ""; showBanner(err.message, "error"); }
 }
+
+document.getElementById("typeFilter").addEventListener("change", renderRequests);
+
 requestList.addEventListener("click", async (e) => {
   const btn = e.target.closest("button[data-action]"); if (!btn) return;
   const { action, id } = btn.dataset; btn.disabled = true;
   try {
-    if (action==="approve") { await apiApproveDisposal(id); showBanner("Request approved.", "success"); }
-    else if (action==="dispose") { await apiDisposeRequest(id); showBanner("Asset marked as disposed.", "success"); }
+    if (action === "approve") {
+      await apiApproveDisposal(id);
+      showBanner("Request approved successfully.", "success");
+    } else if (action === "dispose") {
+      await apiDisposeRequest(id);
+      showBanner("Asset marked as disposed.", "success");
+    } else if (action === "write-off") {
+      await apiWriteOffRequest(id);
+      showBanner("Asset marked as written off.", "success");
+    }
     await loadRequests();
   } catch (err) { showBanner(err.message, "error"); btn.disabled = false; }
 });
