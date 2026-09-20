@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 4 - Asset Receiving &amp; Registration</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="enhancements.css">
+</head>
+<body>
+<div class="container">
+
+    <!-- ============================================================ Header -->
+    <div class="header">
+        <h1>Asset Management System</h1>
+        <p>Module 4 — Asset Receiving &amp; Registration</p>
+    </div>
+
+    <!-- =========================================================== Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-user">
+            <span>Signed in as</span>
+            <select id="currentUser" aria-label="Current user"></select>
+            <span class="role-badge" id="currentRole">Role</span>
+        </div>
+        <div class="toolbar-user">
+            <span id="dbStatus">Connecting to database…</span>
+        </div>
+    </div>
+
+    <!-- ============================================================== Tabs -->
+    <div class="tab-bar">
+        <button type="button" class="tab-btn active" data-tab="panelRegister">Receive &amp; register</button>
+        <button type="button" class="tab-btn" data-tab="panelAssets">Asset register</button>
+        <button type="button" class="tab-btn" data-tab="panelApprovals">
+            Approvals<span class="tab-count" id="approvalCount">0</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="panelDashboard">Summary</button>
+    </div>
+
+    <div class="form-container">
+
+        <!-- =================================================== 1. REGISTER -->
+        <div class="panel active" id="panelRegister">
+
+            <div class="error-message" id="formErrors" style="display:none;"></div>
+
+            <form id="assetForm" novalidate>
+
+                <!-- ------------------------------------ A. Receiving -->
+                <div class="section">
+                    <div class="section-title">A. Receiving Details</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="receivingType">Receiving Type<span class="required">*</span></label>
+                            <select id="receivingType" required>
+                                <option value="">Select receiving type</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="supplierSelect">Supplier / Source<span class="required">*</span></label>
+                            <select id="supplierSelect">
+                                <option value="">Select a saved supplier</option>
+                                <option value="__other__">Other — type it below</option>
+                            </select>
+                            <input type="text" id="supplier" placeholder="Enter supplier or source"
+                                   style="margin-top:10px; display:none;">
+                            <span class="helper-text" id="invoiceHint">Purchased items should also carry an invoice number.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="invoiceNumber">Invoice Number</label>
+                            <input type="text" id="invoiceNumber" placeholder="Enter invoice number">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="invoiceDate">Invoice Date</label>
+                            <input type="date" id="invoiceDate">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="receiptDate">Receipt Date<span class="required">*</span></label>
+                            <input type="date" id="receiptDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantity">Quantity<span class="required">*</span></label>
+                            <input type="number" id="quantity" min="1" max="100" value="1"
+                                   placeholder="Enter quantity" required>
+                            <span class="helper-text">One asset code is created for every unit received.</span>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="invoiceFile">Invoice / Delivery Note Copy</label>
+                            <input type="file" id="invoiceFile" accept=".pdf,.png,.jpg,.jpeg">
+                            <span class="file-info" id="fileInfo">PDF, PNG or JPG up to 5 MB.</span>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="receivingRemarks">Receiving Remarks</label>
+                            <textarea id="receivingRemarks" placeholder="Enter receiving remarks"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------ B. Asset -->
+                <div class="section">
+                    <div class="section-title">B. Asset Details</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="assetName">Asset Name<span class="required">*</span></label>
+                            <input type="text" id="assetName" placeholder="Enter asset name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">Category<span class="required">*</span></label>
+                            <select id="category" required>
+                                <option value="">Select category</option>
+                            </select>
+                            <span class="helper-text" id="categoryHint"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="manufacturer">Make / Manufacturer</label>
+                            <input type="text" id="manufacturer" placeholder="Enter manufacturer">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="model">Model</label>
+                            <input type="text" id="model" placeholder="Enter model">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="condition">Asset Condition<span class="required">*</span></label>
+                            <select id="condition" required>
+                                <option value="">Select condition</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="purchaseDate">Purchase Date</label>
+                            <input type="date" id="purchaseDate">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="warrantyExpiry">Warranty Expiry</label>
+                            <input type="date" id="warrantyExpiry">
+                            <span class="helper-text" id="warrantyHint"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="purchaseCost">Purchase Cost (per unit)</label>
+                            <div class="currency-input">
+                                <span class="currency-symbol">₹</span>
+                                <input type="number" id="purchaseCost" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <span class="helper-text" id="totalCostHint">Total for this receipt: ₹0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------ C. Department -->
+                <div class="section">
+                    <div class="section-title">C. Department &amp; Location</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="department">Department<span class="required">*</span></label>
+                            <select id="department" required>
+                                <option value="">Select department</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="initialLocation">Initial Location<span class="required">*</span></label>
+                            <select id="initialLocation" required>
+                                <option value="">Select location</option>
+                            </select>
+                            <span class="helper-text">Locations belonging to the chosen department are listed first.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------ D. Additional -->
+                <div class="section">
+                    <div class="section-title">D. Additional Information</div>
+                    <div class="form-group">
+                        <label for="additionalRemarks">Remarks / Notes</label>
+                        <textarea id="additionalRemarks" placeholder="Enter additional remarks or notes"></textarea>
+                    </div>
+                </div>
+
+                <div class="button-area view-information-area">
+                    <button type="button" class="view-btn" id="viewInfoBtn">Review entry</button>
+                </div>
+
+                <!-- ------------------------------------ System information -->
+                <div class="section system-generated-section" id="systemInformation" style="display:none;">
+                    <div class="section-title">System Generated Information</div>
+
+                    <div class="info-message" id="previewNotice">
+                        Codes below are reserved by the database when you save. Nothing is stored yet.
+                    </div>
+
+                    <div class="system-section">
+                        <div class="system-grid">
+                            <div class="system-card">
+                                <span class="system-label">Asset ID / Asset Code</span>
+                                <span class="system-value" id="assetCode">Generated on save</span>
+                            </div>
+                            <div class="system-card">
+                                <span class="system-label">Receipt ID</span>
+                                <span class="system-value" id="receiptId">Generated on save</span>
+                            </div>
+                            <div class="system-card">
+                                <span class="system-label">Status</span>
+                                <span class="system-value" id="assetStatus">
+                                    <span class="status pending">Pending Registration</span>
+                                </span>
+                            </div>
+                            <div class="system-card">
+                                <span class="system-label">Units to be created</span>
+                                <span class="system-value" id="unitCount">1</span>
+                            </div>
+                            <div class="system-card">
+                                <span class="system-label">Total Value</span>
+                                <span class="system-value" id="totalValue">₹0.00</span>
+                            </div>
+                            <div class="system-card">
+                                <span class="system-label">Registered By</span>
+                                <span class="system-value" id="registeredBy">Logged-in user</span>
+                            </div>
+                            <div class="system-card">
+                                <span class="system-label">Created At</span>
+                                <span class="system-value" id="createdAt">Automatic</span>
+                            </div>
+                            <div class="system-card">
+                                <span class="system-label">Updated At</span>
+                                <span class="system-value" id="updatedAt">Automatic</span>
+                            </div>
+                            <div class="system-card">
+                                <span class="system-label">QR / Barcode Value</span>
+                                <span class="system-value" id="barcodeValue">Generated on save</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="approval-box">
+                        <label>
+                            <input type="checkbox" id="approvalRequired">
+                            Require approval before asset becomes Available
+                        </label>
+                    </div>
+
+                    <div class="button-area system-buttons">
+                        <button type="button" class="reset-btn" id="resetBtn">Reset form</button>
+                        <button type="submit" class="register-btn" id="registerBtn">Register asset</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- ------------------------------------ Success -->
+            <div class="success-message" id="successMessage">
+                <h3>✓ Asset registered successfully</h3>
+                <div class="success-grid">
+                    <div><strong>Receipt ID:</strong> <span id="successReceiptId"></span></div>
+                    <div><strong>Units created:</strong> <span id="successUnits"></span></div>
+                    <div><strong>Status:</strong> <span id="successStatus"></span></div>
+                    <div><strong>Registered By:</strong> <span id="successRegisteredBy"></span></div>
+                    <div class="full-width"><strong>Asset codes:</strong> <span id="successAssetId"></span></div>
+                </div>
+                <div class="label-box" id="successLabels"></div>
+                <div class="button-area">
+                    <button type="button" class="view-btn small-btn" id="printLabelsBtn">Print labels</button>
+                    <button type="button" class="view-btn small-btn" id="newEntryBtn">Start a new entry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================================================== 2. ASSETS -->
+        <div class="panel" id="panelAssets">
+            <div class="section-title">Asset register</div>
+
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label for="searchBox">Search</label>
+                    <input type="text" id="searchBox" placeholder="Code, name, serial, invoice">
+                </div>
+                <div class="form-group">
+                    <label for="filterStatus">Status</label>
+                    <select id="filterStatus">
+                        <option value="">All statuses</option>
+                        <option value="Pending Approval">Pending Approval</option>
+                        <option value="Available">Available</option>
+                        <option value="Assigned">Assigned</option>
+                        <option value="Under Maintenance">Under Maintenance</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Disposed">Disposed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filterDepartment">Department</label>
+                    <select id="filterDepartment"><option value="">All departments</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="filterCategory">Category</label>
+                    <select id="filterCategory"><option value="">All categories</option></select>
+                </div>
+            </div>
+
+            <div class="inline-actions" style="margin-bottom:18px;">
+                <button type="button" class="view-btn" id="refreshAssets">Refresh</button>
+                <button type="button" class="view-btn" id="exportCsv">Export this page to CSV</button>
+            </div>
+
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Asset code</th>
+                            <th>Asset</th>
+                            <th>Category</th>
+                            <th>Department</th>
+                            <th>Location</th>
+                            <th>Condition</th>
+                            <th>Cost</th>
+                            <th>Warranty</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="assetRows">
+                        <tr><td colspan="10" class="empty-state">Loading assets…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pager">
+                <span class="pager-info" id="pagerInfo"></span>
+                <div class="pager-buttons">
+                    <button type="button" id="prevPage" disabled>Previous</button>
+                    <button type="button" id="nextPage" disabled>Next</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================== 3. APPROVALS -->
+        <div class="panel" id="panelApprovals">
+            <div class="section-title">Assets waiting for approval</div>
+            <div class="info-message">
+                Assets received in Damaged or Poor condition always come here, even if approval was not ticked.
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Asset code</th>
+                            <th>Asset</th>
+                            <th>Department</th>
+                            <th>Condition</th>
+                            <th>Received</th>
+                            <th>Registered by</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="approvalRows">
+                        <tr><td colspan="7" class="empty-state">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================================================== 4. DASHBOARD -->
+        <div class="panel" id="panelDashboard">
+            <div class="section-title">Summary</div>
+            <div class="system-section">
+                <div class="system-grid" id="statCards"></div>
+            </div>
+
+            <div class="section" style="margin-top:30px;">
+                <div class="section-title">By category</div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>Category</th><th>Units</th><th>Value</th></tr></thead>
+                        <tbody id="categoryRows"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Recently registered</div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>Asset code</th><th>Asset</th><th>Status</th><th>Registered at</th></tr></thead>
+                        <tbody id="recentRows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ============================================================== Modal -->
+<div class="modal-backdrop" id="detailModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-head">
+            <h2 id="modalTitle">Asset</h2>
+            <button type="button" class="modal-close" id="modalClose">Close</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<script src="script.js" defer></script>
+</body>
+</html>
