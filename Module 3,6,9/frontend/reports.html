@@ -23,12 +23,17 @@ function section(title, rows, labelKey, countKey) {
   }
   try {
     const r = await apiGetReportsSummary();
+    let typeSection = "";
+    if (r.disposalByType && r.disposalByType.length > 0) {
+      typeSection = section("Requests By Type", r.disposalByType, "request_type", "count");
+    }
     content.innerHTML =
       `<div class="form-card"><h3>Total Assets</h3><p style="font-size:28px;color:var(--color-text-primary)">${r.totalAssets}</p></div>` +
       section("By Status", r.byStatus, "status", "count") +
       section("By Category", r.byCategory, "category", "count") +
       section("By Department", r.byDepartment, "department", "count") +
-      section("Disposal Requests By Status", r.disposalByStatus, "status", "count");
+      section("Disposal & Write-off Requests By Status", r.disposalByStatus, "status", "count") +
+      typeSection;
   } catch (err) {
     document.getElementById("msg").className = "banner visible banner-error";
     document.getElementById("msg").textContent = err.message;

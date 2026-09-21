@@ -61,6 +61,12 @@ async function apiDisposeRequest(requestId) {
   if (!res.ok) throw new Error(body.error || "Failed to finalize disposal.");
   return body;
 }
+async function apiWriteOffRequest(requestId) {
+  const res = await fetch(`${API_BASE}/disposal/${requestId}/write-off`, { method: "PATCH", headers: authHeaders() });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error || "Failed to finalize write-off.");
+  return body;
+}
 async function apiGetReportsSummary() {
   const res = await fetch(`${API_BASE}/reports/summary`, { headers: authHeaders() });
   const body = await res.json();

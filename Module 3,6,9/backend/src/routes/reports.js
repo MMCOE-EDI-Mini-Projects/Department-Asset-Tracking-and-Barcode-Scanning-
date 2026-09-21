@@ -31,12 +31,23 @@ router.get("/reports/summary", requireAuth, async (_req, res) => {
 
   const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM assets`);
 
+  let disposalByType = [];
+  try {
+    const [typeRows] = await pool.query(
+      `SELECT COALESCE(request_type, 'disposal') AS request_type, COUNT(*) AS count, SUM(COALESCE(book_value, 0)) AS total_value FROM disposal_requests GROUP BY request_type`
+    );
+    disposalByType = typeRows;
+  } catch (_err) {
+    // Graceful fallback if migration not yet applied
+  }
+
   res.json({
     totalAssets: total,
     byStatus: statusCounts,
     byCategory: categoryCounts,
     byDepartment: departmentCounts,
     disposalByStatus: disposalCounts,
+    disposalByType: disposalByType,
   });
 });
 

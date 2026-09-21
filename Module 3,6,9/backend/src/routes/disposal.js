@@ -8,10 +8,10 @@ const router = express.Router();
  * POST /disposal
  * Anyone can RAISE a request — no auth required here, matching how
  * staff without an account should still be able to flag an asset
- * for disposal. Approval is the gated step (see below).
+ * for disposal or write-off. Approval is the gated step (see below).
  */
 router.post("/disposal", async (req, res) => {
-  const { assetCode, reason, disposalMethod, requestedBy, remarks } = req.body;
+  const { assetCode, reason, disposalMethod, requestedBy, remarks, requestType, bookValue } = req.body;
 
   const missing = [];
   if (!assetCode) missing.push("assetCode");
@@ -26,16 +26,18 @@ router.post("/disposal", async (req, res) => {
   if (assetRows.length === 0) return res.status(404).json({ error: "Asset not found." });
   const asset = assetRows[0];
 
-  if (asset.status === "disposed") {
-    return res.status(409).json({ error: "This asset has already been disposed." });
+  if (asset.status === "disposed" || asset.status === "written_off") {
+    return res.status(409).json({ error: `This asset has already been ${asset.status.replace("_", " ")}.` });
   }
 
-  const [result] = await pool.query(
-    `INSERT INTO disposal_requests (asset_id, reason, disposal_method, requested_by, status, remarks)
-     VALUES (?, ?, ?, ?, 'pending', ?)`,
-    [asset.asset_id, reason, disposalMethod, requestedBy, remarks || null]
-  );
+  const type = requestType === "write_off" ? "write_off" : "disposal";
+  const bookVal = bookValue !== undefined && bookValue !== "" ? parseFloat(bookValue) : null;
 
+  const [result] = await pool.query(
+    `INSERT INTO disposal_requests (asset_id, reason, disposal_method, requested_by, status, remarks, request_type, book_value)
+     VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)`,
+    [asset.asset_id, reason, disposalMethod, requestedBy, remarks || null, type, bookVal]
+  );
   const [rows] = await pool.query("SELECT * FROM disposal_requests WHERE request_id = ?", [result.insertId]);
   return res.status(201).json(rows[0]);
 });
@@ -56,10 +58,9 @@ router.get("/disposal", requireAuth, async (_req, res) => {
 
 /**
  * PATCH /disposal/:id/approve
- * Week 3: now requires login AND the approve_disposal permission
+ * Requires login AND the approve_disposal permission
  * (dept_head, or asset_admin via "all": true). approvedBy is taken
- * from the authenticated user, not a free-text field anymore —
- * you can't claim to be someone else once you're logged in.
+ * from the authenticated user.
  */
 router.patch("/disposal/:id/approve", requireAuth, requirePermission("approve_disposal"), async (req, res) => {
   const { id } = req.params;
@@ -81,8 +82,7 @@ router.patch("/disposal/:id/approve", requireAuth, requirePermission("approve_di
 
 /**
  * PATCH /disposal/:id/dispose
- * Week 3: same permission gate as approval — finalizing disposal is
- * as consequential as approving it, so it gets the same restriction.
+ * Finalizing physical disposal - sets request status to 'disposed' and asset status to 'disposed'.
  */
 router.patch("/disposal/:id/dispose", requireAuth, requirePermission("approve_disposal"), async (req, res) => {
   const { id } = req.params;
@@ -112,6 +112,51 @@ router.patch("/disposal/:id/dispose", requireAuth, requirePermission("approve_di
     await conn.rollback();
     console.error(err);
     return res.status(500).json({ error: "Failed to finalize disposal." });
+  } finally {
+    conn.release();
+  }
+});
+
+/**
+ * PATCH /disposal/:id/write-off
+ * Finalizing financial write-off - sets request status to 'written_off' and asset status to 'written_off'.
+ * Requires login AND approve_disposal permission. Must be approved first and must be of request_type 'write_off'.
+ */
+router.patch("/disposal/:id/write-off", requireAuth, requirePermission("approve_disposal"), async (req, res) => {
+  const { id } = req.params;
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [existing] = await conn.query("SELECT * FROM disposal_requests WHERE request_id = ?", [id]);
+    if (existing.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ error: "Disposal request not found." });
+    }
+    if (existing[0].status !== "approved") {
+      await conn.rollback();
+      return res.status(409).json({ error: "Request must be approved before it can be written off." });
+    }
+    if (existing[0].request_type !== "write_off") {
+      await conn.rollback();
+      return res.status(409).json({ error: "Only write-off requests can be finalized as written off." });
+    }
+
+    await conn.query(
+      `UPDATE disposal_requests SET status = 'written_off', write_off_date = NOW() WHERE request_id = ?`,
+      [id]
+    );
+    await conn.query(`UPDATE assets SET status = 'written_off' WHERE asset_id = ?`, [existing[0].asset_id]);
+
+    await conn.commit();
+
+    const [rows] = await pool.query("SELECT * FROM disposal_requests WHERE request_id = ?", [id]);
+    return res.json(rows[0]);
+  } catch (err) {
+    await conn.rollback();
+    console.error(err);
+    return res.status(500).json({ error: "Failed to finalize write-off." });
   } finally {
     conn.release();
   }
