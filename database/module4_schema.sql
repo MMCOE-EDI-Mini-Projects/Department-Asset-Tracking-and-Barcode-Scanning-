@@ -54,10 +54,15 @@ CREATE TABLE asset_receipts (
 
 -- =====================================================
 -- 2. ASSET CODE SEQUENCES
+--
 -- Used to generate asset codes such as:
+--
 -- CE-508-LAP-0001
 -- CE-508-LAP-0002
 -- CE-508-MON-0001
+--
+-- Sequence is maintained separately for:
+-- Department + Location + Category
 -- =====================================================
 
 CREATE TABLE asset_code_sequences (
@@ -79,8 +84,24 @@ CREATE TABLE asset_code_sequences (
 
 -- =====================================================
 -- 3. INITIAL ASSET CODE SEQUENCES
--- Computer Engineering (CE)
--- Locations 501 to 514
+--
+-- Department:
+-- CE = Computer Engineering
+--
+-- Location:
+-- 501
+--
+-- Categories:
+-- DES = Desktop
+-- MON = Monitor
+-- MOU = Mouse
+-- KB  = Keyboard
+-- LAP = Laptop
+-- PRO = Projector
+-- SB  = Smartboard
+-- CPU = CPU
+-- FUR = Furniture
+-- OTH = Other
 -- =====================================================
 
 INSERT INTO asset_code_sequences
@@ -91,20 +112,16 @@ INSERT INTO asset_code_sequences
     next_number
 )
 VALUES
+('CE', '501', 'CPU', 1),
+('CE', '501', 'DES', 1),
+('CE', '501', 'FUR', 1),
+('CE', '501', 'KB',  1),
 ('CE', '501', 'LAP', 1),
-('CE', '502', 'LAP', 1),
-('CE', '503', 'LAP', 1),
-('CE', '504', 'LAP', 1),
-('CE', '505', 'LAP', 1),
-('CE', '506', 'LAP', 1),
-('CE', '507', 'LAP', 1),
-('CE', '508', 'LAP', 1),
-('CE', '509', 'LAP', 1),
-('CE', '510', 'LAP', 1),
-('CE', '511', 'LAP', 1),
-('CE', '512', 'LAP', 1),
-('CE', '513', 'LAP', 1),
-('CE', '514', 'LAP', 1);
+('CE', '501', 'MON', 1),
+('CE', '501', 'MOU', 1),
+('CE', '501', 'OTH', 1),
+('CE', '501', 'PRO', 1),
+('CE', '501', 'SB',  1);
 
 
 -- =====================================================
