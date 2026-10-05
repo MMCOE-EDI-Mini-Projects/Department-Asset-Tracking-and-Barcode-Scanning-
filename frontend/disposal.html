@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disposal &amp; Write-Off — MMCOE AssetHub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header id="mainNavbar" class="navbar"></header>
+
+    <main class="main-wrapper">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Disposal &amp; Write-Off Lifecycle</h1>
+                <p class="page-subtitle">Raise de-commissioning requests, obtain departmental approval, and record write-offs (Module 9)</p>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="toggleRequestForm()">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span id="btnToggleFormText">Raise Disposal Request</span>
+            </button>
+        </div>
+
+        <!-- 1. Raise Request Form (Collapsible) -->
+        <div id="requestFormCard" class="card" style="display: none; margin-bottom: 24px;">
+            <h2 class="card-title">Initiate Disposal or Financial Write-Off</h2>
+            <form id="disposalForm">
+                <div class="form-grid" style="margin-bottom: 20px;">
+                    <div class="form-group full-width">
+                        <label class="form-label" for="disposalAssetSelect">Asset to Decommission<span class="required">*</span></label>
+                        <select id="disposalAssetSelect" class="form-select" required onchange="onDisposalAssetSelected()">
+                            <option value="">Select an asset...</option>
+                        </select>
+                        <div id="disposalAssetInfo" style="font-size: 12px; color: var(--text-muted); margin-top: 5px;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="requestType">Action Type<span class="required">*</span></label>
+                        <select id="requestType" class="form-select" required>
+                            <option value="disposal">Physical Disposal (Scrap / Auction)</option>
+                            <option value="write_off">Financial Write-Off (Total Loss / Depreciated)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="disposalMethod">Disposal Method / Channel<span class="required">*</span></label>
+                        <input type="text" id="disposalMethod" class="form-input" placeholder="e.g. Authorized E-Waste Recycler / Scrap Vendor" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="bookValue">Estimated Salvage / Book Value (₹)</label>
+                        <input type="number" id="bookValue" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label" for="disposalReason">Detailed Justification / Inspection Summary<span class="required">*</span></label>
+                        <textarea id="disposalReason" class="form-textarea" rows="2" placeholder="Specify failure history, repair cost estimate exceeding replacement value, or obsolescence..." required></textarea>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label" for="disposalRemarks">Additional Committee Notes</label>
+                        <input type="text" id="disposalRemarks" class="form-input" placeholder="Optional audit or inspection notes">
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="toggleRequestForm()">Cancel</button>
+                    <button type="submit" id="btnSubmitDisposal" class="btn btn-danger">Submit for Department Approval</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 2. Requests Management Table -->
+        <div class="card">
+            <div class="card-title">
+                <span>Disposal Requests Registry</span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="filterDisposalStatus" class="form-select" style="padding: 5px 10px; font-size: 13px;" onchange="loadRequests()">
+                        <option value="all">All Requests</option>
+                        <option value="pending" selected>Pending Review</option>
+                        <option value="approved">Approved</option>
+                        <option value="disposed">Completed Disposals</option>
+                        <option value="written_off">Written Off</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Equipment</th>
+                            <th>Type</th>
+                            <th>Justification</th>
+                            <th>Disposal Method</th>
+                            <th>Book Value</th>
+                            <th>Requested By</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestsTableBody">
+                        <tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 28px;">Loading disposal requests…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        let allAssets = [];
+        let requestsList = [];
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            if (!Auth.requirePrivileged()) return;
+            renderNavbar("disposal");
+
+            try {
+                const assetRes = await API.get("/api/assets");
+                if (assetRes.ok) {
+                    allAssets = assetRes.assets || [];
+                    populateAssetSelect();
+                }
+
+                const params = new URLSearchParams(window.location.search);
+                const assetIdParam = params.get("assetId");
+                if (assetIdParam) {
+                    toggleRequestForm(true);
+                    document.getElementById("disposalAssetSelect").value = assetIdParam;
+                    onDisposalAssetSelected();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+
+            await loadRequests();
+        });
+
+        function toggleRequestForm(forceOpen) {
+            const form = document.getElementById("requestFormCard");
+            const btnText = document.getElementById("btnToggleFormText");
+            const isOpen = forceOpen !== undefined ? forceOpen : (form.style.display === "none");
+            form.style.display = isOpen ? "block" : "none";
+            btnText.innerText = isOpen ? "Hide Form" : "Raise Disposal Request";
+            if (isOpen) form.scrollIntoView({ behavior: "smooth" });
+        }
+
+        function populateAssetSelect() {
+            const sel = document.getElementById("disposalAssetSelect");
+            const eligible = allAssets.filter(a => a.status !== 'disposed' && a.status !== 'written_off');
+            const listToUse = eligible.length > 0 ? eligible : allAssets;
+
+            if (!listToUse || listToUse.length === 0) {
+                sel.innerHTML = `<option value="">No assets available in register</option>`;
+                return;
+            }
+
+            sel.innerHTML = `<option value="">Select equipment...</option>` +
+                listToUse.map(a => {
+                    const dept = a.department ? (a.department.name || a.department.deptName || 'General') : 'General';
+                    return `<option value="${a.assetId}">${a.assetCode} — ${a.name} (${dept}, Status: ${a.status})</option>`;
+                }).join("");
+        }
+
+        function onDisposalAssetSelected() {
+            const assetId = document.getElementById("disposalAssetSelect").value;
+            const info = document.getElementById("disposalAssetInfo");
+            if (!assetId) { info.innerHTML = ""; return; }
+            const a = allAssets.find(x => x.assetId == assetId);
+            if (!a) return;
+            info.innerHTML = `Category: <strong>${a.category ? a.category.categoryName : '—'}</strong> | Cost: <strong>${formatCurrency(a.cost)}</strong> | Current Condition: <strong style="color:var(--warning);">${a.condition ? a.condition.conditionName : '—'}</strong>`;
+        }
+
+        async function loadRequests() {
+            const status = document.getElementById("filterDisposalStatus").value;
+            const tbody = document.getElementById("requestsTableBody");
+
+            try {
+                const res = await API.get(`/api/disposal/requests?status=${encodeURIComponent(status)}`);
+                if (res.ok && res.requests) {
+                    requestsList = res.requests;
+                    if (requestsList.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 28px;">No disposal requests found under this filter.</td></tr>`;
+                        return;
+                    }
+
+                    const user = Auth.getUser();
+                    const isHeadOrAdmin = user && (user.role === "dept_head" || user.role === "asset_admin");
+                    const isAdmin = user && user.role === "asset_admin";
+
+                    tbody.innerHTML = requestsList.map(r => {
+                        let actionBtns = "—";
+                        if (r.status === "pending" && isHeadOrAdmin) {
+                            actionBtns = `<button type="button" class="btn btn-success btn-sm" onclick="approveRequest(${r.requestId})">Approve</button>`;
+                        } else if (r.status === "approved" && (isAdmin || isHeadOrAdmin)) {
+                            actionBtns = `<button type="button" class="btn btn-danger btn-sm" onclick="finalizeDisposal(${r.requestId})">Finalize Decommission</button>`;
+                        }
+
+                        return `
+                            <tr>
+                                <td style="font-family: monospace; font-weight: 700; color: var(--primary);">#REQ-${r.requestId}</td>
+                                <td>
+                                    <div style="font-weight: 600;">${r.asset ? r.asset.name : '—'}</div>
+                                    <div style="font-family: monospace; font-size: 11.5px; color: var(--text-muted);">${r.asset ? r.asset.assetCode : ''}</div>
+                                </td>
+                                <td><span style="font-size: 12px; text-transform: uppercase; font-weight: 600; color: var(--text-secondary);">${r.requestType}</span></td>
+                                <td style="max-width: 220px; font-size: 12.5px; color: var(--text-secondary);">${r.reason || '—'}</td>
+                                <td>${r.disposalMethod || '—'}</td>
+                                <td style="font-weight: 600;">${formatCurrency(r.bookValue)}</td>
+                                <td>
+                                    <div>${r.requestedBy || 'Staff'}</div>
+                                    <div style="font-size: 11px; color: var(--text-muted);">${formatDate(r.requestDate)}</div>
+                                </td>
+                                <td><span class="badge badge-${r.status}">${r.status}</span></td>
+                                <td>${actionBtns}</td>
+                            </tr>
+                        `;
+                    }).join("");
+                }
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--danger); padding: 28px;">Error: ${err.message}</td></tr>`;
+            }
+        }
+
+        document.getElementById("disposalForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btnSubmitDisposal");
+            btn.disabled = true;
+
+            const payload = {
+                assetId: parseInt(document.getElementById("disposalAssetSelect").value),
+                requestType: document.getElementById("requestType").value,
+                disposalMethod: document.getElementById("disposalMethod").value,
+                bookValue: parseFloat(document.getElementById("bookValue").value) || null,
+                reason: document.getElementById("disposalReason").value,
+                remarks: document.getElementById("disposalRemarks").value
+            };
+
+            try {
+                const res = await API.post("/api/disposal/request", payload);
+                if (res.ok) {
+                    showToast("Disposal request raised successfully", "success");
+                    document.getElementById("disposalForm").reset();
+                    toggleRequestForm(false);
+                    loadRequests();
+                }
+            } catch (err) {
+                showToast(err.message || "Failed to raise request", "error");
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        async function approveRequest(id) {
+            if (!confirm("Approve this disposal request?")) return;
+            try {
+                const res = await API.post(`/api/disposal/${id}/approve`);
+                if (res.ok) {
+                    showToast("Request approved", "success");
+                    loadRequests();
+                }
+            } catch (e) {
+                showToast(e.message || "Approval failed", "error");
+            }
+        }
+
+        async function finalizeDisposal(id) {
+            const remarks = prompt("Enter final disposal certification / receipt remarks:", "Auctioned to certified e-waste handler");
+            if (remarks === null) return;
+            try {
+                const res = await API.post(`/api/disposal/${id}/finalize`, { remarks });
+                if (res.ok) {
+                    showToast("Asset successfully decommissioned & marked off register", "success");
+                    loadRequests();
+                }
+            } catch (e) {
+                showToast(e.message || "Finalize failed", "error");
+            }
+        }
+    </script>
+</body>
+</html>
