@@ -3,41 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner &amp; Identification — MMCOE AssetHub</title>
+    <title>Barcode Scanner &amp; Asset Verification — MMCOE AssetHub</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
         .scanner-container {
-            max-width: 620px;
+            max-width: 680px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
+
         .scan-zone {
             background: #f8fafc;
             border: 2px dashed #cbd5e1;
             border-radius: var(--radius-md);
-            padding: 28px;
+            padding: 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
             position: relative;
-            min-height: 240px;
+            min-height: 230px;
             transition: var(--transition);
         }
+
         .scan-zone.dragover {
             border-color: var(--primary);
             background: var(--primary-light);
         }
+
+        /* Camera Viewfinder & Laser Guide */
+        .camera-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 440px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: #090d16;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            display: none;
+            margin: 0 auto 12px;
+        }
+
         #cameraVideo {
             width: 100%;
-            max-height: 250px;
+            max-height: 280px;
             object-fit: cover;
-            border-radius: var(--radius-sm);
-            display: none;
+            display: block;
         }
+
+        .laser-scanner-line {
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            height: 2px;
+            background: #ef4444;
+            box-shadow: 0 0 10px #ef4444, 0 0 16px #f87171;
+            animation: laserSweep 2s ease-in-out infinite alternate;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .viewfinder-frame {
+            position: absolute;
+            inset: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.65);
+            border-radius: 8px;
+            pointer-events: none;
+            box-shadow: 0 0 0 2000px rgba(15, 23, 42, 0.35);
+        }
+
+        @keyframes laserSweep {
+            0% { top: 12%; opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { top: 88%; opacity: 0.7; }
+        }
+
+        /* Hardware USB Scanner Indicator Pill */
+        .usb-wedge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .usb-wedge-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 6px #22c55e;
+        }
+
         .sample-chips {
             display: flex;
             align-items: center;
@@ -45,6 +110,7 @@
             flex-wrap: wrap;
             margin-top: 10px;
         }
+
         .sample-chip {
             background: #f1f5f9;
             border: 1px solid var(--border-color);
@@ -56,11 +122,13 @@
             cursor: pointer;
             transition: var(--transition);
         }
+
         .sample-chip:hover {
             border-color: var(--primary);
             color: var(--primary);
             background: #eff6ff;
         }
+
         .result-panel {
             background: #ffffff;
             border: 1px solid var(--border-color);
@@ -70,9 +138,14 @@
             display: none;
             animation: fadeIn 0.25s ease-out;
         }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -81,31 +154,40 @@
 
     <main class="main-wrapper">
         <div class="scanner-container">
-            <div style="text-align: center; margin-bottom: 8px;">
+            <div style="text-align: center; margin-bottom: 4px;">
                 <h1 class="page-title" style="justify-content: center;">Asset Barcode &amp; Tag Scanner</h1>
-                <p class="page-subtitle">Verify equipment on-site via barcode scanning, photo upload, or code lookup</p>
+                <p class="page-subtitle">Verify equipment on-site via camera scanning, USB laser barcode reader, or code lookup</p>
             </div>
 
             <!-- Centered Scanner Card -->
             <div class="card">
                 <div class="card-title">
-                    <span>Scan Asset Tag</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><line x1="7" y1="12" x2="17" y2="12"></line></svg>
+                        <span>Scan Asset Tag</span>
+                    </div>
                     <span id="scanStatusBadge" class="badge badge-assigned">Ready</span>
                 </div>
 
-                <!-- Input Field for Handheld Scanners & Manual Entry -->
-                <form id="lookupForm" style="margin-bottom: 20px;">
-                    <div class="form-group">
+                <!-- Input Field for Handheld USB Scanners & Manual Entry -->
+                <form id="lookupForm" style="margin-bottom: 18px;">
+                    <div class="form-group" style="margin-bottom: 8px;">
                         <label class="form-label" for="scanCodeInput">Handheld Laser Scanner / Manual Code</label>
                         <div style="display: flex; gap: 8px;">
-                            <input type="text" id="scanCodeInput" class="form-input" placeholder="e.g. AST-2026-001001" autofocus required>
-                            <button type="submit" id="btnIdentify" class="btn btn-primary">Identify</button>
+                            <input type="text" id="scanCodeInput" class="form-input" placeholder="e.g. AST-2026-001001" autofocus required autocomplete="off">
+                            <button type="submit" id="btnIdentify" class="btn btn-primary" style="white-space: nowrap;">Identify</button>
                         </div>
-                        <div class="sample-chips">
-                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Quick Test:</span>
-                            <button type="button" class="sample-chip" onclick="quickFill('AST-2026-001001')">AST-2026-001001</button>
-                            <button type="button" class="sample-chip" onclick="quickFill('AST-2026-001002')">AST-2026-001002</button>
-                            <button type="button" class="sample-chip" onclick="quickFill('AST-2026-001003')">AST-2026-001003</button>
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                            <div class="sample-chips" style="margin-top: 0;">
+                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Quick Test:</span>
+                                <button type="button" class="sample-chip" onclick="quickFill('AST-2026-001001')">AST-2026-001001</button>
+                                <button type="button" class="sample-chip" onclick="quickFill('AST-2026-001002')">AST-2026-001002</button>
+                                <button type="button" class="sample-chip" onclick="quickFill('AST-2026-001003')">AST-2026-001003</button>
+                            </div>
+                            <div class="usb-wedge-pill" title="Hardware USB wedge barcode scanners type directly into this view">
+                                <span class="usb-wedge-dot"></span>
+                                <span>USB Scanner Wedge Active</span>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -116,30 +198,43 @@
 
                 <!-- Camera / Image Upload Zone -->
                 <div class="scan-zone" id="scanZone">
-                    <video id="cameraVideo" autoplay playsinline></video>
-                    <canvas id="cameraCanvas" style="display: none;"></canvas>
-
-                    <div id="cameraPlaceholder">
-                        <div style="width: 44px; height: 44px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; color: var(--text-secondary);">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-                        </div>
-                        <p style="font-weight: 600; color: var(--text-primary); font-size: 14px;">Camera &amp; Photo Decoder</p>
-                        <p style="color: var(--text-muted); font-size: 12px; margin-top: 3px;">Reads Code 128, QR Codes, and asset text</p>
+                    <!-- Camera Device Selection (reveals when multiple cameras available) -->
+                    <div id="cameraSelectContainer" style="display: none; width: 100%; max-width: 360px; margin-bottom: 14px; text-align: left;">
+                        <label for="cameraSelect" class="form-label" style="font-size: 11px; margin-bottom: 4px;">Choose Camera Device:</label>
+                        <select id="cameraSelect" class="form-select" style="font-size: 12px; padding: 6px 10px;"></select>
                     </div>
 
-                    <div style="margin-top: 16px; display: flex; gap: 8px;">
-                        <button type="button" id="btnToggleCamera" class="btn btn-secondary btn-sm" onclick="toggleCamera()">
+                    <!-- Viewfinder Wrapper with Laser Overlay -->
+                    <div id="cameraWrapper" class="camera-wrapper">
+                        <video id="cameraVideo" autoplay playsinline muted></video>
+                        <div class="laser-scanner-line" id="laserGuide"></div>
+                        <div class="viewfinder-frame"></div>
+                    </div>
+                    <canvas id="cameraCanvas" style="display: none;"></canvas>
+
+                    <!-- Camera Placeholder State -->
+                    <div id="cameraPlaceholder">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; color: var(--text-secondary);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        </div>
+                        <p style="font-weight: 600; color: var(--text-primary); font-size: 14px; margin-bottom: 3px;">Camera &amp; Photo Decoder</p>
+                        <p style="color: var(--text-muted); font-size: 12px; margin: 0 auto; max-width: 340px;">Reads Code 128 barcodes, QR codes, and institutional tag identifiers using device camera or file upload</p>
+                    </div>
+
+                    <!-- Action Controls -->
+                    <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                        <button type="button" id="btnToggleCamera" class="btn btn-secondary btn-sm">
                             Start Camera
                         </button>
-                        <label class="btn btn-secondary btn-sm" style="cursor: pointer;">
+                        <label class="btn btn-secondary btn-sm" style="cursor: pointer; margin-bottom: 0;">
                             <span>Upload Tag Photo</span>
-                            <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                            <input type="file" id="fileInput" accept="image/*" style="display: none;">
                         </label>
                     </div>
                 </div>
             </div>
 
-            <!-- Centered Result Card (Reveals upon identification) -->
+            <!-- In-Page Identified Asset Card (Visible upon match) -->
             <div id="resultCard" class="result-panel">
                 <div class="card-title">
                     <span>Identified Asset Record</span>
@@ -148,11 +243,11 @@
 
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
                     <div>
-                        <h3 id="resAssetName" style="font-family: var(--font-heading); font-size: 18px; color: var(--text-primary);"></h3>
-                        <p id="resAssetCode" style="font-family: monospace; font-size: 13px; color: var(--primary); font-weight: 700;"></p>
+                        <h3 id="resAssetName" style="font-family: var(--font-heading); font-size: 18px; color: var(--text-primary); margin-bottom: 2px;"></h3>
+                        <p id="resAssetCode" style="font-family: monospace; font-size: 13px; color: var(--primary); font-weight: 700; margin: 0;"></p>
                     </div>
                     <div class="barcode-box" style="padding: 6px;">
-                        <img id="resBarcodeImg" src="" alt="Barcode" style="max-height: 44px;">
+                        <img id="resBarcodeImg" src="" alt="Barcode" style="max-height: 44px; display: block;">
                     </div>
                 </div>
 
@@ -190,213 +285,138 @@
                     <button type="button" class="btn btn-secondary btn-sm" onclick="resetScannerView()">Clear</button>
                 </div>
             </div>
+
+            <!-- Recent Scan History Card -->
+            <div id="recentScansCard" class="card">
+                <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>Recent Scan History</span>
+                        <span id="scanHistoryCount" class="badge badge-assigned" style="font-size: 11px;">0</span>
+                    </div>
+                    <button type="button" id="btnClearHistory" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="clearScanHistory()">Clear History</button>
+                </div>
+
+                <div id="scanHistoryEmpty" style="text-align: center; padding: 24px 0; color: var(--text-muted); font-size: 13px;">
+                    No barcodes scanned in this session yet. Scan a tag using USB laser scanner, camera, or code lookup.
+                </div>
+
+                <div id="scanHistoryTableContainer" style="overflow-x: auto; display: none;">
+                    <table class="table" style="font-size: 12px; margin-top: 4px; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Scan Time</th>
+                                <th>Barcode / Code</th>
+                                <th>Asset Name</th>
+                                <th>Outcome</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scanHistoryTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </main>
 
+    <!-- Asset Verification Modal -->
+    <div id="verificationModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-content" style="max-width: 580px;">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalTitle" style="font-family: var(--font-heading); font-size: 18px; margin: 0; color: var(--text-primary);">Asset Verification</h2>
+                    <span id="modalSubtitle" style="color: var(--text-muted); font-size: 12px;">Institutional registry lookup</span>
+                </div>
+                <button type="button" class="modal-close" id="btnModalClose" aria-label="Close modal">&times;</button>
+            </div>
+
+            <!-- Modal Loading State -->
+            <div id="modalLoadingState" style="display: none; text-align: center; padding: 32px 0;">
+                <div style="width: 38px; height: 38px; margin: 0 auto 14px; border: 3px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                <p style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Verifying Asset Code…</p>
+                <p id="modalLoadingCode" style="font-family: monospace; color: var(--primary); font-size: 13px; font-weight: 700;"></p>
+            </div>
+
+            <!-- Modal Success State -->
+            <div id="modalSuccessState" style="display: none;">
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #22c55e; color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold;">&#10003;</div>
+                        <div>
+                            <div style="font-weight: 700; color: #15803d; font-size: 13px;">Physical Tag Verified</div>
+                            <div id="modalVerifiedTime" style="color: #166534; font-size: 11px;"></div>
+                        </div>
+                    </div>
+                    <span id="modalStatusBadge" class="badge"></span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <h3 id="modalAssetName" style="font-size: 17px; margin-bottom: 2px; color: var(--text-primary);"></h3>
+                        <span id="modalAssetCode" style="font-family: monospace; font-size: 13px; font-weight: 700; color: var(--primary);"></span>
+                    </div>
+                    <div class="barcode-box" style="padding: 4px;">
+                        <img id="modalBarcodeImg" src="" alt="Barcode" style="max-height: 40px; display: block;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; font-size: 13px; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 12px 0; margin-bottom: 16px;">
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Category</span>
+                        <div id="modalCategory" style="font-weight: 600;"></div>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Make &amp; Model</span>
+                        <div id="modalMakeModel" style="font-weight: 600;"></div>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Serial Number</span>
+                        <div id="modalSerial" style="font-family: monospace; font-weight: 600;"></div>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Condition</span>
+                        <div id="modalCondition" style="font-weight: 600;"></div>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Department</span>
+                        <div id="modalDept" style="font-weight: 600;"></div>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Room / Location</span>
+                        <div id="modalLocation" style="font-weight: 600;"></div>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Assigned Custodian</span>
+                        <div id="modalCustodian" style="font-weight: 600;"></div>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Last Update</span>
+                        <div id="modalUpdatedAt" style="font-weight: 600;"></div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
+                    <a id="modalTransferLink" href="#" class="btn btn-secondary btn-sm">Transfer Asset</a>
+                    <button type="button" id="modalPrintBtn" class="btn btn-secondary btn-sm">Print Label</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="closeVerificationModal()">Done</button>
+                </div>
+            </div>
+
+            <!-- Modal Error State -->
+            <div id="modalErrorState" style="display: none; text-align: center; padding: 20px 0;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: #fef2f2; border: 1px solid #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 12px;">&times;</div>
+                <h3 id="modalErrorHeading" style="font-size: 16px; color: var(--text-primary); margin-bottom: 6px;">Asset Not Found in Registry</h3>
+                <p id="modalErrorMessage" style="font-size: 13px; color: var(--text-secondary); max-width: 420px; margin: 0 auto 16px; line-height: 1.5;"></p>
+                <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                    <button type="button" id="modalRetryBtn" class="btn btn-primary btn-sm">Retry Verification</button>
+                    <a id="modalRegisterLink" href="register.html" class="btn btn-secondary btn-sm">Register as New Asset</a>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="closeVerificationModal()">Dismiss</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="js/app.js"></script>
-    <script>
-        let currentAsset = null;
-        let videoStream = null;
-        let scanInterval = null;
-
-        document.addEventListener("DOMContentLoaded", () => {
-            Auth.requireAuth();
-            renderNavbar("scanner");
-
-            const params = new URLSearchParams(window.location.search);
-            const codeParam = params.get("code");
-            if (codeParam) {
-                document.getElementById("scanCodeInput").value = codeParam;
-                identifyCode(codeParam);
-            }
-        });
-
-        function quickFill(code) {
-            document.getElementById("scanCodeInput").value = code;
-            identifyCode(code);
-        }
-
-        document.getElementById("lookupForm").addEventListener("submit", (e) => {
-            e.preventDefault();
-            const code = document.getElementById("scanCodeInput").value.trim();
-            if (code) identifyCode(code);
-        });
-
-        async function identifyCode(code) {
-            const statusBadge = document.getElementById("scanStatusBadge");
-            statusBadge.innerText = "Searching…";
-            statusBadge.className = "badge badge-maintenance";
-
-            try {
-                const res = await API.get(`/api/assets/code/${encodeURIComponent(code)}`);
-                if (res.ok && res.asset) {
-                    showAssetResult(res.asset);
-                    showToast(`Identified ${res.asset.name} (${res.asset.assetCode})`, "success");
-                    statusBadge.innerText = "Match Found";
-                    statusBadge.className = "badge badge-available";
-                }
-            } catch (err) {
-                showToast(`Asset '${code}' not found in registry`, "error");
-                statusBadge.innerText = "Not Found";
-                statusBadge.className = "badge badge-disposed";
-            }
-        }
-
-        function showAssetResult(a) {
-            currentAsset = a;
-            document.getElementById("resAssetName").innerText = a.name;
-            document.getElementById("resAssetCode").innerText = a.assetCode;
-            document.getElementById("resMakeModel").innerText = `${a.make || '—'} / ${a.model || '—'}`;
-            document.getElementById("resSerial").innerText = a.serialNumber || '—';
-            document.getElementById("resDept").innerText = a.department ? a.department.name : "Unassigned";
-            document.getElementById("resLocation").innerText = a.location ? `${a.location.name} (${a.location.locationCode})` : "—";
-            document.getElementById("resCustodian").innerText = a.custodian ? a.custodian.name : "None assigned";
-            document.getElementById("resCondition").innerText = a.condition ? a.condition.conditionName : "Good";
-
-            const badge = document.getElementById("resStatusBadge");
-            badge.className = `badge badge-${a.status}`;
-            badge.innerText = a.status ? a.status.replace('_', ' ') : 'available';
-
-            document.getElementById("resBarcodeImg").src = `/api/barcode/generate?code=${encodeURIComponent(a.assetCode)}&width=220&height=50`;
-
-            document.getElementById("btnTransferShortcut").href = `transfer.html?assetId=${a.assetId}`;
-            document.getElementById("btnDisposalShortcut").href = `disposal.html?assetId=${a.assetId}`;
-
-            const resCard = document.getElementById("resultCard");
-            resCard.style.display = "block";
-            resCard.scrollIntoView({ behavior: "smooth" });
-        }
-
-        function resetScannerView() {
-            document.getElementById("resultCard").style.display = "none";
-            document.getElementById("scanCodeInput").value = "";
-            document.getElementById("scanStatusBadge").innerText = "Ready";
-            document.getElementById("scanStatusBadge").className = "badge badge-assigned";
-        }
-
-        // Camera Management
-        async function toggleCamera() {
-            const video = document.getElementById("cameraVideo");
-            const placeholder = document.getElementById("cameraPlaceholder");
-            const btn = document.getElementById("btnToggleCamera");
-
-            if (videoStream) {
-                stopCamera();
-                btn.innerText = "Start Camera";
-            } else {
-                try {
-                    videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                    video.srcObject = videoStream;
-                    video.style.display = "block";
-                    placeholder.style.display = "none";
-                    btn.innerText = "Stop Camera";
-                    startBarcodeDetection(video);
-                } catch (err) {
-                    showToast("Could not access camera: " + err.message, "error");
-                }
-            }
-        }
-
-        function stopCamera() {
-            if (videoStream) {
-                videoStream.getTracks().forEach(t => t.stop());
-                videoStream = null;
-            }
-            if (scanInterval) {
-                clearInterval(scanInterval);
-                scanInterval = null;
-            }
-            document.getElementById("cameraVideo").style.display = "none";
-            document.getElementById("cameraPlaceholder").style.display = "block";
-        }
-
-        function startBarcodeDetection(video) {
-            if ('BarcodeDetector' in window) {
-                const detector = new BarcodeDetector({ formats: ['code_128', 'qr_code', 'code_39', 'ean_13'] });
-                scanInterval = setInterval(async () => {
-                    if (!videoStream) return;
-                    try {
-                        const barcodes = await detector.detect(video);
-                        if (barcodes.length > 0) {
-                            const raw = barcodes[0].rawValue;
-                            document.getElementById("scanCodeInput").value = raw;
-                            toggleCamera();
-                            identifyCode(raw);
-                        }
-                    } catch {}
-                }, 350);
-            } else {
-                // Periodic snapshot to backend decoder
-                const canvas = document.getElementById("cameraCanvas");
-                const ctx = canvas.getContext("2d");
-                scanInterval = setInterval(() => {
-                    if (!videoStream || video.videoWidth === 0) return;
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    canvas.toBlob(blob => {
-                        if (!blob) return;
-                        decodeBlobWithServer(blob, true);
-                    }, 'image/jpeg', 0.85);
-                }, 1200);
-            }
-        }
-
-        // Server-Side Barcode & QR Decoding
-        async function decodeBlobWithServer(blob, silent = false) {
-            const formData = new FormData();
-            formData.append("file", blob, "scan.jpg");
-
-            try {
-                const res = await API.post("/api/barcode/decode", formData);
-                if (res.ok && res.code) {
-                    stopCamera();
-                    document.getElementById("scanCodeInput").value = res.code;
-                    if (res.found && res.asset) {
-                        showAssetResult(res.asset);
-                        showToast(`Decoded barcode: ${res.code}`, "success");
-                    } else {
-                        identifyCode(res.code);
-                    }
-                }
-            } catch (e) {
-                if (!silent) {
-                    showToast("Could not detect barcode from image: " + e.message, "error");
-                }
-            }
-        }
-
-        function handleImageUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            showToast("Decoding uploaded image with ZXing engine…", "info");
-
-            // First try client-side BarcodeDetector if available
-            const img = new Image();
-            img.src = URL.createObjectURL(file);
-            img.onload = async () => {
-                if ('BarcodeDetector' in window) {
-                    try {
-                        const detector = new BarcodeDetector({ formats: ['code_128', 'qr_code', 'code_39', 'ean_13'] });
-                        const codes = await detector.detect(img);
-                        if (codes.length > 0) {
-                            const raw = codes[0].rawValue;
-                            document.getElementById("scanCodeInput").value = raw;
-                            identifyCode(raw);
-                            return;
-                        }
-                    } catch {}
-                }
-                // Send to backend ZXing MultiFormatReader
-                decodeBlobWithServer(file, false);
-            };
-        }
-
-        function printIdentifiedTag() {
-            if (!currentAsset) return;
-            window.open(`/api/barcode/generate?code=${encodeURIComponent(currentAsset.assetCode)}&width=450&height=120`, '_blank');
-        }
-    </script>
+    <script src="js/scanner.js"></script>
 </body>
 </html>
