@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports &amp; Audit Trail — MMCOE AssetHub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .report-section {
+            margin-bottom: 28px;
+        }
+        @media print {
+            .navbar, .header-actions, .filter-bar { display: none !important; }
+            body { background: #ffffff !important; color: #000000 !important; }
+            .card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
+        }
+    </style>
+</head>
+<body>
+    <header id="mainNavbar" class="navbar"></header>
+
+    <main class="main-wrapper">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Institutional Reports &amp; Audit Trail</h1>
+                <p class="page-subtitle">Comprehensive lifecycle compliance, audit logging, and valuation statements (Module 8)</p>
+            </div>
+            <div class="header-actions">
+                <button type="button" class="btn btn-secondary" onclick="window.print()">
+                    <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    <span>Print Report</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Analytical Breakdown Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 24px;">
+            <!-- Category Distribution -->
+            <div class="card">
+                <h2 class="card-title">Equipment by Category</h2>
+                <div id="categoryReportList" style="display: flex; flex-direction: column; gap: 14px;">
+                    <p style="color: var(--text-muted); font-size: 13px;">Loading category report…</p>
+                </div>
+            </div>
+
+            <!-- Departmental Asset Distribution -->
+            <div class="card">
+                <h2 class="card-title">Department Allocation</h2>
+                <div id="deptReportList" style="display: flex; flex-direction: column; gap: 14px;">
+                    <p style="color: var(--text-muted); font-size: 13px;">Loading department report…</p>
+                </div>
+            </div>
+
+            <!-- Status Distribution -->
+            <div class="card">
+                <h2 class="card-title">Lifecycle &amp; Operational Status</h2>
+                <div id="statusReportList" style="display: flex; flex-direction: column; gap: 14px;">
+                    <p style="color: var(--text-muted); font-size: 13px;">Loading status report…</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comprehensive Audit Log Table -->
+        <div class="card">
+            <div class="card-title">
+                <span>System Audit Trail &amp; Forensic Log</span>
+                <span class="badge badge-assigned" id="auditTotalBadge">0 Events</span>
+            </div>
+            <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px;">
+                Immutable traceability log recording every creation, transfer, approval, and disposal action across the institution.
+            </p>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Log ID</th>
+                            <th>Timestamp</th>
+                            <th>Action Type</th>
+                            <th>Target Entity</th>
+                            <th>Entity ID</th>
+                            <th>Field Modified</th>
+                            <th>Previous State</th>
+                            <th>New Value / Asset Code</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fullAuditBody">
+                        <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 28px;">Loading audit trail…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            Auth.requireAuth();
+            renderNavbar("reports");
+
+            try {
+                const [statsRes, auditRes] = await Promise.all([
+                    API.get("/api/reports/dashboard"),
+                    API.get("/api/reports/audit-log")
+                ]);
+
+                if (statsRes.ok && statsRes.stats) {
+                    const s = statsRes.stats;
+                    renderBars("categoryReportList", s.categoryDistribution, s.totalAssets, "#2563eb");
+                    renderBars("deptReportList", s.departmentDistribution, s.totalAssets, "#059669");
+                    renderBars("statusReportList", s.statusDistribution, s.totalAssets, "#d97706");
+                }
+
+                if (auditRes.ok && auditRes.logs) {
+                    renderFullAudit(auditRes.logs);
+                }
+            } catch (err) {
+                showToast("Failed to load reports: " + err.message, "error");
+            }
+        });
+
+        function renderBars(elId, distMap, total, colorHex) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            if (!distMap || Object.keys(distMap).length === 0) {
+                el.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">No data recorded.</p>`;
+                return;
+            }
+
+            let html = "";
+            for (const [key, count] of Object.entries(distMap)) {
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                html += `
+                    <div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 5px;">
+                            <span>${key}</span>
+                            <span style="color: var(--text-secondary);">${count} items (${pct}%)</span>
+                        </div>
+                        <div style="height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                            <div style="width: ${pct}%; height: 100%; background: ${colorHex}; border-radius: 999px;"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            el.innerHTML = html;
+        }
+
+        function renderFullAudit(logs) {
+            const tbody = document.getElementById("fullAuditBody");
+            document.getElementById("auditTotalBadge").innerText = `${logs.length} Events`;
+
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 28px;">No audit events recorded.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = logs.map(l => {
+                const actionBadgeClass = l.action === "CREATE" ? "badge-available" :
+                                         (l.action === "APPROVE" ? "badge-assigned" :
+                                         (l.action === "TRANSFER" ? "badge-pending_approval" : "badge-maintenance"));
+                return `
+                    <tr>
+                        <td style="font-family: monospace; color: var(--text-muted); font-size: 12px;">#LOG-${l.logId}</td>
+                        <td style="font-size: 12.5px; color: var(--text-secondary);">${formatDate(l.createdAt)}</td>
+                        <td><span class="badge ${actionBadgeClass}">${l.action}</span></td>
+                        <td style="font-weight: 600;">${l.entityType}</td>
+                        <td style="font-family: monospace; color: var(--primary);">${l.entityId}</td>
+                        <td style="color: var(--text-secondary);">${l.fieldChanged || '—'}</td>
+                        <td style="color: var(--text-muted);">${l.oldValue || '—'}</td>
+                        <td style="font-weight: 600; color: var(--text-primary);">${l.newValue || '—'}</td>
+                    </tr>
+                `;
+            }).join("");
+        }
+    </script>
+</body>
+</html>

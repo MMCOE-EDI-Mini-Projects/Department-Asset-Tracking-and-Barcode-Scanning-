@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Registration &amp; Receiving — MMCOE AssetHub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .mode-toggle {
+            display: flex;
+            background: #e2e8f0;
+            padding: 3px;
+            border-radius: var(--radius-sm);
+            width: fit-content;
+            margin-bottom: 20px;
+        }
+        .mode-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 7px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .mode-btn.active {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+        .serial-inputs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .success-box {
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            margin-top: 24px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header id="mainNavbar" class="navbar"></header>
+
+    <main class="main-wrapper">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Asset Receiving &amp; Registration</h1>
+                <p class="page-subtitle">Intake new equipment, allocate barcode tags, and record institutional assets (Modules 3 &amp; 4)</p>
+            </div>
+            <div class="mode-toggle">
+                <button type="button" class="mode-btn active" id="btnModeBatch" onclick="switchMode('batch')">Batch Receiving (With Invoice)</button>
+                <button type="button" class="mode-btn" id="btnModeSingle" onclick="switchMode('single')">Single Asset Register</button>
+            </div>
+        </div>
+
+        <!-- Mode 1: Batch Receiving Intake -->
+        <div id="batchSection" class="card">
+            <h2 class="card-title">Batch Equipment Intake &amp; Invoicing</h2>
+            <form id="batchForm">
+                <div style="font-size: 12.5px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 14px; letter-spacing: 0.5px;">
+                    1. Vendor &amp; Receipt Specifications
+                </div>
+                <div class="form-grid" style="margin-bottom: 24px;">
+                    <div class="form-group">
+                        <label class="form-label" for="batchReceivingType">Receiving Type<span class="required">*</span></label>
+                        <select id="batchReceivingType" class="form-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="batchSupplier">Supplier / Source<span class="required">*</span></label>
+                        <select id="batchSupplier" class="form-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="batchInvoiceNumber">Invoice / PO Number</label>
+                        <input type="text" id="batchInvoiceNumber" class="form-input" placeholder="INV-2026-9912">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="batchInvoiceDate">Invoice Date</label>
+                        <input type="date" id="batchInvoiceDate" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="batchReceiptDate">Receipt Date<span class="required">*</span></label>
+                        <input type="date" id="batchReceiptDate" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="batchQuantity">Quantity Received<span class="required">*</span></label>
+                        <input type="number" id="batchQuantity" class="form-input" value="1" min="1" max="100" required onchange="renderSerialInputs()">
+                    </div>
+                </div>
+
+                <div style="font-size: 12.5px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 14px; letter-spacing: 0.5px;">
+                    2. Asset Technical Details
+                </div>
+                <div class="form-grid" style="margin-bottom: 24px;">
+                    <div class="form-group">
+                        <label class="form-label" for="batchAssetName">Asset Common Name<span class="required">*</span></label>
+                        <input type="text" id="batchAssetName" class="form-input" placeholder="Dell OptiPlex 7090 Desktop" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="batchCategory">Category<span class="required">*</span></label>
+                        <select id="batchCategory" class="form-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="batchMake">Manufacturer / Make</label>
+                        <input type="text" id="batchMake" class="form-input" placeholder="Dell">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="batchModel">Model</label>
+                        <input type="text" id="batchModel" class="form-input" placeholder="7090 Tower">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="batchUnitCost">Unit Cost (₹)</label>
+                        <input type="number" id="batchUnitCost" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="batchCondition">Received Condition<span class="required">*</span></label>
+                        <select id="batchCondition" class="form-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="batchDepartment">Assigned Department<span class="required">*</span></label>
+                        <select id="batchDepartment" class="form-select" required onchange="filterLocations('batchDepartment', 'batchLocation')"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="batchLocation">Initial Room / Lab<span class="required">*</span></label>
+                        <select id="batchLocation" class="form-select" required></select>
+                    </div>
+                </div>
+
+                <div style="font-size: 12.5px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 14px; letter-spacing: 0.5px;">
+                    3. Serial Numbers (One per unit received)
+                </div>
+                <div id="serialInputsContainer" class="serial-inputs-grid" style="margin-bottom: 24px;"></div>
+
+                <div class="form-group full-width" style="margin-bottom: 24px;">
+                    <label class="form-label" for="batchRemarks">Receiving Remarks / Inspection Notes</label>
+                    <textarea id="batchRemarks" class="form-textarea" rows="2" placeholder="Inspection verified, all seals intact..."></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="reset" class="btn btn-secondary">Clear Form</button>
+                    <button type="submit" id="btnBatchSubmit" class="btn btn-primary">Process Batch Intake &amp; Generate Barcodes</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Mode 2: Single Asset Register -->
+        <div id="singleSection" class="card" style="display: none;">
+            <h2 class="card-title">Single Asset Registration</h2>
+            <form id="singleForm">
+                <div class="form-grid" style="margin-bottom: 24px;">
+                    <div class="form-group">
+                        <label class="form-label" for="singleName">Asset Name<span class="required">*</span></label>
+                        <input type="text" id="singleName" class="form-input" placeholder="Cisco Catalyst Switch" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="singleCategory">Category<span class="required">*</span></label>
+                        <select id="singleCategory" class="form-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="singleMake">Make / Brand</label>
+                        <input type="text" id="singleMake" class="form-input" placeholder="Cisco">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="singleModel">Model</label>
+                        <input type="text" id="singleModel" class="form-input" placeholder="2960-X">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="singleSerial">Serial Number</label>
+                        <input type="text" id="singleSerial" class="form-input" placeholder="FOC1928X01">
+                        <span id="serialStatusMsg" class="form-hint"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="singleCondition">Condition<span class="required">*</span></label>
+                        <select id="singleCondition" class="form-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="singleDepartment">Department<span class="required">*</span></label>
+                        <select id="singleDepartment" class="form-select" required onchange="filterLocations('singleDepartment', 'singleLocation')"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="singleLocation">Location / Room<span class="required">*</span></label>
+                        <select id="singleLocation" class="form-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="singleCost">Purchase Cost (₹)</label>
+                        <input type="number" id="singleCost" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="singlePurchaseDate">Purchase Date</label>
+                        <input type="date" id="singlePurchaseDate" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="singleWarrantyExpiry">Warranty Expiry Date</label>
+                        <input type="date" id="singleWarrantyExpiry" class="form-input">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label" for="singleRemarks">Remarks</label>
+                        <textarea id="singleRemarks" class="form-textarea" rows="2" placeholder="Asset notes..."></textarea>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="reset" class="btn btn-secondary">Clear</button>
+                    <button type="submit" id="btnSingleSubmit" class="btn btn-primary">Register Asset &amp; Generate Barcode</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Result & Barcode Display Box -->
+        <div id="resultBox" class="success-box">
+            <h3 style="color: var(--success-text); font-size: 16px; font-weight: 700; margin-bottom: 8px;">Registration Completed</h3>
+            <p id="resultSummary" style="color: var(--text-secondary); margin-bottom: 20px; font-size: 13.5px;"></p>
+            <div id="barcodesContainer" style="display: flex; gap: 16px; flex-wrap: wrap;"></div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        let metadata = null;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            Auth.requireAuth();
+            renderNavbar("register");
+
+            document.getElementById("batchReceiptDate").value = new Date().toISOString().slice(0, 10);
+            renderSerialInputs();
+
+            try {
+                const res = await API.get("/api/meta");
+                if (res.ok) {
+                    metadata = res;
+                    populateDropdowns();
+                }
+            } catch (err) {
+                showToast("Failed to load metadata: " + err.message, "error");
+            }
+
+            const serialInput = document.getElementById("singleSerial");
+            serialInput.addEventListener("blur", async () => {
+                const s = serialInput.value.trim();
+                const hint = document.getElementById("serialStatusMsg");
+                if (!s) { hint.innerText = ""; return; }
+                try {
+                    const check = await API.get(`/api/assets/check-serial?serial=${encodeURIComponent(s)}`);
+                    if (check.exists) {
+                        hint.innerText = "Serial number is already registered.";
+                        hint.style.color = "var(--danger)";
+                    } else {
+                        hint.innerText = "Serial number is available.";
+                        hint.style.color = "var(--success)";
+                    }
+                } catch { hint.innerText = ""; }
+            });
+        });
+
+        function switchMode(mode) {
+            document.getElementById("btnModeBatch").classList.toggle("active", mode === "batch");
+            document.getElementById("btnModeSingle").classList.toggle("active", mode === "single");
+            document.getElementById("batchSection").style.display = mode === "batch" ? "block" : "none";
+            document.getElementById("singleSection").style.display = mode === "single" ? "block" : "none";
+            document.getElementById("resultBox").style.display = "none";
+        }
+
+        function populateDropdowns() {
+            if (!metadata) return;
+
+            fillSelect("batchReceivingType", metadata.receivingTypes, "receivingTypeId", "typeName");
+            fillSelect("batchSupplier", metadata.suppliers, "supplierId", "supplierName");
+            fillSelect("batchCategory", metadata.categories, "categoryId", "categoryName");
+            fillSelect("singleCategory", metadata.categories, "categoryId", "categoryName");
+            fillSelect("batchCondition", metadata.conditions, "conditionId", "conditionName");
+            fillSelect("singleCondition", metadata.conditions, "conditionId", "conditionName");
+            fillSelect("batchDepartment", metadata.departments, "departmentId", "name");
+            fillSelect("singleDepartment", metadata.departments, "departmentId", "name");
+
+            filterLocations("batchDepartment", "batchLocation");
+            filterLocations("singleDepartment", "singleLocation");
+        }
+
+        function fillSelect(elId, items, valKey, textKey) {
+            const el = document.getElementById(elId);
+            if (!el || !items) return;
+            el.innerHTML = `<option value="">Select Option</option>` +
+                items.map(it => `<option value="${it[valKey]}">${it[textKey]}</option>`).join("");
+        }
+
+        function filterLocations(deptElId, locElId) {
+            const deptId = document.getElementById(deptElId).value;
+            const locEl = document.getElementById(locElId);
+            if (!metadata || !locEl) return;
+            const filtered = metadata.locations.filter(l => !deptId || !l.department || ((l.department.departmentId || l.department.deptId) == deptId));
+            locEl.innerHTML = `<option value="">Select Room / Lab</option>` +
+                filtered.map(l => `<option value="${l.locationId}">${l.name} (${l.locationCode})</option>`).join("");
+        }
+
+        function renderSerialInputs() {
+            const qty = Math.min(100, Math.max(1, parseInt(document.getElementById("batchQuantity").value) || 1));
+            const container = document.getElementById("serialInputsContainer");
+            let html = "";
+            for (let i = 1; i <= qty; i++) {
+                html += `
+                    <div class="form-group">
+                        <label class="form-label" style="font-size: 11px;">Unit #${i} Serial Number</label>
+                        <input type="text" class="form-input batch-serial" placeholder="SN-${i}" name="serial_${i}">
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        document.getElementById("batchForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btnBatchSubmit");
+            btn.disabled = true;
+            btn.innerText = "Processing Intake…";
+
+            const serials = Array.from(document.querySelectorAll(".batch-serial"))
+                                 .map(el => el.value.trim()).filter(Boolean);
+
+            const payload = {
+                receivingTypeId: document.getElementById("batchReceivingType").value,
+                supplierId: document.getElementById("batchSupplier").value,
+                supplierName: document.getElementById("batchSupplier").options[document.getElementById("batchSupplier").selectedIndex]?.text,
+                invoiceNumber: document.getElementById("batchInvoiceNumber").value,
+                invoiceDate: document.getElementById("batchInvoiceDate").value,
+                receiptDate: document.getElementById("batchReceiptDate").value,
+                quantity: parseInt(document.getElementById("batchQuantity").value),
+                assetName: document.getElementById("batchAssetName").value,
+                categoryId: document.getElementById("batchCategory").value,
+                make: document.getElementById("batchMake").value,
+                model: document.getElementById("batchModel").value,
+                unitCost: parseFloat(document.getElementById("batchUnitCost").value) || 0,
+                conditionId: document.getElementById("batchCondition").value,
+                departmentId: document.getElementById("batchDepartment").value,
+                locationId: document.getElementById("batchLocation").value,
+                serialNumbers: serials,
+                receivingRemarks: document.getElementById("batchRemarks").value
+            };
+
+            try {
+                const res = await API.post("/api/receipts/batch-register", payload);
+                if (res.ok) {
+                    showToast(`Successfully registered ${res.count} assets under Receipt ${res.receiptCode}`, "success");
+                    displayGeneratedBarcodes(res.assets, res.receiptCode);
+                    document.getElementById("batchForm").reset();
+                    renderSerialInputs();
+                }
+            } catch (err) {
+                showToast(err.message || "Failed to process batch", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Process Batch Intake & Generate Barcodes";
+            }
+        });
+
+        document.getElementById("singleForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btnSingleSubmit");
+            btn.disabled = true;
+            btn.innerText = "Registering…";
+
+            const payload = {
+                name: document.getElementById("singleName").value,
+                categoryId: document.getElementById("singleCategory").value,
+                make: document.getElementById("singleMake").value,
+                model: document.getElementById("singleModel").value,
+                serialNumber: document.getElementById("singleSerial").value,
+                conditionId: document.getElementById("singleCondition").value,
+                departmentId: document.getElementById("singleDepartment").value,
+                locationId: document.getElementById("singleLocation").value,
+                cost: parseFloat(document.getElementById("singleCost").value) || 0,
+                purchaseDate: document.getElementById("singlePurchaseDate").value,
+                warrantyExpiry: document.getElementById("singleWarrantyExpiry").value,
+                remarks: document.getElementById("singleRemarks").value
+            };
+
+            try {
+                const res = await API.post("/api/assets/register", payload);
+                if (res.ok) {
+                    showToast(`Asset registered successfully as ${res.asset.assetCode}`, "success");
+                    displayGeneratedBarcodes([res.asset]);
+                    document.getElementById("singleForm").reset();
+                }
+            } catch (err) {
+                showToast(err.message || "Failed to register asset", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Register Asset & Generate Barcode";
+            }
+        });
+
+        function displayGeneratedBarcodes(assets, receiptCode) {
+            const resBox = document.getElementById("resultBox");
+            const summary = document.getElementById("resultSummary");
+            const container = document.getElementById("barcodesContainer");
+
+            summary.innerHTML = receiptCode
+                ? `Created <strong>${assets.length}</strong> equipment unit(s) linked to Batch Receipt <strong>${receiptCode}</strong>.`
+                : `Created asset tag <strong>${assets[0].assetCode}</strong>. Print label for physical tag placement.`;
+
+            container.innerHTML = assets.map(a => `
+                <div class="barcode-box">
+                    <img src="/api/barcode/generate?code=${encodeURIComponent(a.assetCode)}&width=280&height=80" alt="${a.assetCode}">
+                    <div class="barcode-label">${a.assetCode}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${a.name}</div>
+                    <div style="margin-top: 10px; display: flex; gap: 6px;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="window.open('/api/barcode/generate?code=${encodeURIComponent(a.assetCode)}&width=400&height=120')">
+                            Print Barcode
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="window.open('/api/barcode/qr?text=${encodeURIComponent(a.assetCode)}&width=300&height=300')">
+                            View QR
+                        </button>
+                    </div>
+                </div>
+            `).join("");
+
+            resBox.style.display = "block";
+            resBox.scrollIntoView({ behavior: "smooth" });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Transfer &amp; Custody — MMCOE AssetHub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+        .tab-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 13.5px;
+            font-weight: 600;
+            padding: 7px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <header id="mainNavbar" class="navbar"></header>
+
+    <main class="main-wrapper">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Asset Assignment &amp; Transfer Management</h1>
+                <p class="page-subtitle">Track custodial handover, room reallocations, and inter-departmental equipment movement (Modules 5 &amp; 7)</p>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button type="button" class="tab-btn active" id="tabTransferBtn" onclick="switchTab('transfer')">New Transfer / Relocation</button>
+            <button type="button" class="tab-btn" id="tabAssignBtn" onclick="switchTab('assign')">Direct Custodian Assignment</button>
+            <button type="button" class="tab-btn" id="tabHistoryBtn" onclick="switchTab('history')">Transfer Audit History</button>
+        </div>
+
+        <!-- 1. Transfer Panel -->
+        <div id="transferPanel" class="card">
+            <h2 class="card-title">Inter-Departmental Asset Relocation</h2>
+            <form id="transferForm">
+                <div class="form-grid" style="margin-bottom: 24px;">
+                    <div class="form-group full-width">
+                        <label class="form-label" for="transferAssetSelect">Select Asset to Transfer<span class="required">*</span></label>
+                        <select id="transferAssetSelect" class="form-select" required onchange="onAssetSelected('transferAssetSelect', 'transferCurrentDetails')">
+                            <option value="">Select an asset...</option>
+                        </select>
+                        <div id="transferCurrentDetails" style="font-size: 12px; color: var(--text-muted); margin-top: 5px;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="targetDepartment">Destination Department<span class="required">*</span></label>
+                        <select id="targetDepartment" class="form-select" required onchange="filterLocations('targetDepartment', 'targetLocation')"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="targetLocation">Destination Room / Lab<span class="required">*</span></label>
+                        <select id="targetLocation" class="form-select" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="targetCustodian">New Custodian / Incharge</label>
+                        <select id="targetCustodian" class="form-select"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="receiverUser">Receiving Staff Member<span class="required">*</span></label>
+                        <select id="receiverUser" class="form-select" required></select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label" for="transferRemarks">Reason for Relocation / Project Notes</label>
+                        <textarea id="transferRemarks" class="form-textarea" rows="2" placeholder="Temporary lab setup, project requirement, permanent reallocation..."></textarea>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-primary); font-size: 13px;">
+                            <input type="checkbox" id="barcodeVerified" checked style="width: 16px; height: 16px; accent-color: var(--primary);">
+                            <span>Barcode label physically inspected and verified at handover</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="submit" id="btnSubmitTransfer" class="btn btn-primary">Authorize &amp; Execute Transfer</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 2. Direct Assignment Panel -->
+        <div id="assignPanel" class="card" style="display: none;">
+            <h2 class="card-title">Assign Equipment to Faculty / Staff</h2>
+            <form id="assignForm">
+                <div class="form-grid" style="margin-bottom: 24px;">
+                    <div class="form-group full-width">
+                        <label class="form-label" for="assignAssetSelect">Select Equipment<span class="required">*</span></label>
+                        <select id="assignAssetSelect" class="form-select" required onchange="onAssetSelected('assignAssetSelect', 'assignCurrentDetails')">
+                            <option value="">Select an asset...</option>
+                        </select>
+                        <div id="assignCurrentDetails" style="font-size: 12px; color: var(--text-muted); margin-top: 5px;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="assignCustodian">Assigned Custodian<span class="required">*</span></label>
+                        <select id="assignCustodian" class="form-select" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="assignLocation">Placed Room / Desk</label>
+                        <select id="assignLocation" class="form-select"></select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label" for="assignRemarks">Assignment Remarks</label>
+                        <textarea id="assignRemarks" class="form-textarea" rows="2" placeholder="Issued for academic year, lab responsibility..."></textarea>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="submit" id="btnSubmitAssign" class="btn btn-primary">Complete Assignment</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 3. Transfer History Panel -->
+        <div id="historyPanel" class="card" style="display: none;">
+            <div class="card-title">
+                <span>Relocation Audit Trail</span>
+                <span class="badge badge-assigned" id="transferCountBadge">0 Records</span>
+            </div>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Asset Code</th>
+                            <th>Equipment</th>
+                            <th>From Department</th>
+                            <th>To Department &amp; Room</th>
+                            <th>Handover By</th>
+                            <th>Received By</th>
+                            <th>Verification</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transferHistoryBody">
+                        <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">Loading transfer history…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        let metadata = null;
+        let allAssets = [];
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            if (!Auth.requirePrivileged()) return;
+            renderNavbar("transfer");
+
+            try {
+                const [metaRes, assetRes] = await Promise.all([
+                    API.get("/api/meta"),
+                    API.get("/api/assets")
+                ]);
+
+                if (metaRes.ok) {
+                    metadata = metaRes;
+                    populateDropdowns();
+                }
+                if (assetRes.ok) {
+                    allAssets = assetRes.assets || [];
+                    populateAssetSelects();
+                }
+
+                const params = new URLSearchParams(window.location.search);
+                const assetIdParam = params.get("assetId");
+                if (assetIdParam) {
+                    document.getElementById("transferAssetSelect").value = assetIdParam;
+                    onAssetSelected('transferAssetSelect', 'transferCurrentDetails');
+                }
+            } catch (err) {
+                showToast("Failed to initialize transfer data: " + err.message, "error");
+            }
+        });
+
+        function switchTab(tab) {
+            document.getElementById("tabTransferBtn").classList.toggle("active", tab === "transfer");
+            document.getElementById("tabAssignBtn").classList.toggle("active", tab === "assign");
+            document.getElementById("tabHistoryBtn").classList.toggle("active", tab === "history");
+
+            document.getElementById("transferPanel").style.display = tab === "transfer" ? "block" : "none";
+            document.getElementById("assignPanel").style.display = tab === "assign" ? "block" : "none";
+            document.getElementById("historyPanel").style.display = tab === "history" ? "block" : "none";
+
+            if (tab === "history") loadTransferHistory();
+        }
+
+        function populateDropdowns() {
+            if (!metadata) return;
+            fillSelect("targetDepartment", metadata.departments, "departmentId", "name");
+            fillSelect("targetCustodian", metadata.users, "userId", "name");
+            fillSelect("receiverUser", metadata.users, "userId", "name");
+            fillSelect("assignCustodian", metadata.users, "userId", "name");
+            fillSelect("assignLocation", metadata.locations, "locationId", "name");
+            filterLocations("targetDepartment", "targetLocation");
+        }
+
+        function fillSelect(elId, items, valKey, textKey) {
+            const el = document.getElementById(elId);
+            if (!el || !items) return;
+            el.innerHTML = `<option value="">Select Option</option>` +
+                items.map(it => `<option value="${it[valKey]}">${it[textKey]}</option>`).join("");
+        }
+
+        function filterLocations(deptElId, locElId) {
+            const deptId = document.getElementById(deptElId).value;
+            const locEl = document.getElementById(locElId);
+            if (!metadata || !locEl) return;
+            const filtered = metadata.locations.filter(l => !deptId || !l.department || ((l.department.departmentId || l.department.deptId) == deptId));
+            locEl.innerHTML = `<option value="">Select Room / Lab</option>` +
+                filtered.map(l => `<option value="${l.locationId}">${l.name} (${l.locationCode})</option>`).join("");
+        }
+
+        function populateAssetSelects() {
+            const transferSelect = document.getElementById("transferAssetSelect");
+            const assignSelect = document.getElementById("assignAssetSelect");
+
+            if (!allAssets || allAssets.length === 0) {
+                const emptyOpt = `<option value="">No assets available in register</option>`;
+                if (transferSelect) transferSelect.innerHTML = emptyOpt;
+                if (assignSelect) assignSelect.innerHTML = emptyOpt;
+                return;
+            }
+
+            const opts = `<option value="">Select equipment...</option>` +
+                allAssets.map(a => {
+                    const dept = a.department ? (a.department.name || a.department.deptName || 'General') : 'General';
+                    return `<option value="${a.assetId}">${a.assetCode} — ${a.name} (${dept})</option>`;
+                }).join("");
+
+            if (transferSelect) transferSelect.innerHTML = opts;
+            if (assignSelect) assignSelect.innerHTML = opts;
+        }
+
+        function onAssetSelected(selectId, detailElId) {
+            const assetId = document.getElementById(selectId).value;
+            const detailEl = document.getElementById(detailElId);
+            if (!assetId) { detailEl.innerHTML = ""; return; }
+
+            const a = allAssets.find(x => x.assetId == assetId);
+            if (!a) return;
+
+            detailEl.innerHTML = `Current: <strong>${a.department ? a.department.name : 'Unassigned'}</strong> | Room: <strong>${a.location ? a.location.name : '—'}</strong> | Custodian: <strong>${a.custodian ? a.custodian.name : 'None'}</strong> | Status: <span class="badge badge-${a.status}">${a.status}</span>`;
+        }
+
+        document.getElementById("transferForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btnSubmitTransfer");
+            btn.disabled = true;
+
+            const payload = {
+                assetId: parseInt(document.getElementById("transferAssetSelect").value),
+                toDepartmentId: parseInt(document.getElementById("targetDepartment").value),
+                toLocationId: parseInt(document.getElementById("targetLocation").value) || null,
+                toCustodianId: parseInt(document.getElementById("targetCustodian").value) || null,
+                receiverUserId: parseInt(document.getElementById("receiverUser").value) || null,
+                remarks: document.getElementById("transferRemarks").value,
+                barcodeVerified: document.getElementById("barcodeVerified").checked
+            };
+
+            try {
+                const res = await API.post("/api/transfers", payload);
+                if (res.ok) {
+                    showToast("Transfer executed successfully", "success");
+                    document.getElementById("transferForm").reset();
+                    const updated = await API.get("/api/assets");
+                    if (updated.ok) allAssets = updated.assets || [];
+                    populateAssetSelects();
+                }
+            } catch (err) {
+                showToast(err.message || "Failed to execute transfer", "error");
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById("assignForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btnSubmitAssign");
+            btn.disabled = true;
+
+            const payload = {
+                assetId: parseInt(document.getElementById("assignAssetSelect").value),
+                custodianId: parseInt(document.getElementById("assignCustodian").value),
+                locationId: parseInt(document.getElementById("assignLocation").value) || null,
+                remarks: document.getElementById("assignRemarks").value
+            };
+
+            try {
+                const res = await API.post("/api/assignments", payload);
+                if (res.ok) {
+                    showToast("Custodian assigned successfully", "success");
+                    document.getElementById("assignForm").reset();
+                }
+            } catch (err) {
+                showToast(err.message || "Assignment failed", "error");
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        async function loadTransferHistory() {
+            const tbody = document.getElementById("transferHistoryBody");
+            try {
+                const res = await API.get("/api/transfers");
+                if (res.ok && res.transfers) {
+                    const list = res.transfers;
+                    document.getElementById("transferCountBadge").innerText = `${list.length} Records`;
+                    if (list.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">No transfers recorded yet.</td></tr>`;
+                        return;
+                    }
+                    tbody.innerHTML = list.map(t => `
+                        <tr>
+                            <td style="color: var(--text-muted); font-size: 12.5px;">${formatDate(t.transferDate)}</td>
+                            <td style="font-family: monospace; font-weight: 700; color: var(--primary);">${t.asset ? t.asset.assetCode : '—'}</td>
+                            <td style="font-weight: 600;">${t.asset ? t.asset.name : '—'}</td>
+                            <td>${t.fromDepartment ? t.fromDepartment.name : '—'}</td>
+                            <td>
+                                <div>${t.toDepartment ? t.toDepartment.name : '—'}</div>
+                                <div style="font-size: 11px; color: var(--text-muted);">${t.toLocation ? t.toLocation.name : '—'}</div>
+                            </td>
+                            <td>${t.handoverUser ? t.handoverUser.name : '—'}</td>
+                            <td>${t.receiverUser ? t.receiverUser.name : '—'}</td>
+                            <td><span class="badge ${t.barcodeVerified ? 'badge-available' : 'badge-maintenance'}">${t.barcodeVerified ? 'Verified' : 'Unchecked'}</span></td>
+                        </tr>
+                    `).join("");
+                }
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 24px;">Failed to load history: ${err.message}</td></tr>`;
+            }
+        }
+    </script>
+</body>
+</html>
