@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Audit &amp; Physical Verification — MMCOE AssetHub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+        .tab-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 13.5px;
+            font-weight: 600;
+            padding: 7px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 999px;
+            overflow: hidden;
+            display: flex;
+            margin-top: 6px;
+        }
+        .progress-seg {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        .verify-btn-group {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .verify-btn {
+            padding: 4px 8px;
+            font-size: 11.5px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .btn-found { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .btn-found:hover { background: #bbf7d0; }
+        .btn-missing { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .btn-missing:hover { background: #fecaca; }
+        .btn-damaged { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+        .btn-damaged:hover { background: #fde68a; }
+        .btn-misplaced { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+        .btn-misplaced:hover { background: #e2e8f0; }
+    </style>
+</head>
+<body>
+    <header id="mainNavbar" class="navbar"></header>
+
+    <main class="main-wrapper">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Physical Inventory Audit &amp; Verification</h1>
+                <p class="page-subtitle">Schedule departmental stocktaking cycles, scan barcode tags, and reconcile physical inventory (Module 8)</p>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button type="button" class="tab-btn active" id="tabAuditsBtn" onclick="switchTab('audits')">Audit Cycles</button>
+            <button type="button" class="tab-btn" id="tabItemsBtn" onclick="switchTab('items')" style="display: none;">Audit Inspection Sheet</button>
+            <button type="button" class="tab-btn" id="tabNewBtn" onclick="switchTab('new')">New Audit Session</button>
+        </div>
+
+        <!-- 1. Audit Cycles List Panel -->
+        <div id="panelAudits" class="card">
+            <div class="card-title">Institutional Audit Cycles</div>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Cycle ID</th>
+                            <th>Audit Name</th>
+                            <th>Department</th>
+                            <th>Target Location / Lab</th>
+                            <th>Status</th>
+                            <th>Initiated By</th>
+                            <th>Date Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditCycleBody">
+                        <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 32px;">Loading audit cycles…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 2. Audit Items / Verification Panel -->
+        <div id="panelItems" class="card" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <div class="card-title" id="activeAuditTitle" style="margin-bottom: 4px;">Audit Inspection</div>
+                    <div id="activeAuditSubtitle" style="font-size: 13px; color: var(--text-muted);">Verifying lab equipment</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-secondary" onclick="switchTab('audits')">Back to Cycles</button>
+                    <button type="button" id="btnCompleteAudit" class="btn btn-primary" onclick="completeActiveAudit()">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Finalize &amp; Close Audit</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Barcode Scan Bar inside Audit -->
+            <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <div style="font-weight: 600; font-size: 13.5px; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                    <svg style="width: 18px; height: 18px; stroke: var(--primary);" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path></svg>
+                    <span>Quick Scan:</span>
+                </div>
+                <input type="text" id="quickScanInput" class="form-input" style="max-width: 260px;" placeholder="Scan barcode or enter AST code..." onkeydown="handleQuickScan(event)">
+                <button type="button" class="btn btn-secondary" onclick="processQuickScan()">Mark Found</button>
+                <div id="quickScanMsg" style="font-size: 12.5px; color: var(--primary); font-weight: 500;"></div>
+            </div>
+
+            <!-- Audit Progress Statistics -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 4px;">
+                    <span id="auditProgressLabel">Audit Progress: 0 of 0 verified (0%)</span>
+                    <span id="auditProgressBreakdown" style="color: var(--text-secondary); font-size: 12px;"></span>
+                </div>
+                <div class="progress-container">
+                    <div id="progFound" class="progress-seg" style="background: #10b981; width: 0%;"></div>
+                    <div id="progMissing" class="progress-seg" style="background: #ef4444; width: 0%;"></div>
+                    <div id="progDamaged" class="progress-seg" style="background: #f59e0b; width: 0%;"></div>
+                    <div id="progOther" class="progress-seg" style="background: #64748b; width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Table of Items in Audit -->
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Asset Code</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Assigned Room</th>
+                            <th>Verification Status</th>
+                            <th>Scanned At</th>
+                            <th>Verifier Notes</th>
+                            <th>Quick Verify Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditItemsBody">
+                        <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 32px;">Select an audit cycle to inspect items.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3. New Audit Form Panel -->
+        <div id="panelNew" class="card" style="display: none;">
+            <h2 class="card-title">Initiate Departmental Inventory Audit</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+                Creating an audit will automatically enumerate all registered assets currently located in the specified department and room, generating verification checkpoints.
+            </p>
+            <form id="createAuditForm">
+                <div class="form-grid" style="margin-bottom: 24px;">
+                    <div class="form-group full-width">
+                        <label class="form-label" for="auditName">Audit Session Name<span class="required">*</span></label>
+                        <input type="text" id="auditName" class="form-input" required placeholder="e.g. Room 501 Hardware Audit / Q1 IT Infrastructure Check">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="deptSelect">Target Department</label>
+                        <select id="deptSelect" class="form-select" onchange="filterLocations()">
+                            <option value="">All Departments (Entire Campus)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="locationSelect">Target Location / Lab Room</label>
+                        <select id="locationSelect" class="form-select">
+                            <option value="">All Rooms / Labs</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="button" class="btn btn-secondary" onclick="switchTab('audits')">Cancel</button>
+                    <button type="submit" id="btnSubmitAudit" class="btn btn-primary">Generate Audit Cycle &amp; Inventory Items</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        let allCycles = [];
+        let activeAudit = null;
+        let activeItems = [];
+        let allDepts = [];
+        let allLocations = [];
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            if (!Auth.requirePrivileged()) return;
+            renderNavbar("audit");
+
+            await Promise.all([
+                loadMetadata(),
+                loadCycles()
+            ]);
+
+            // Form Submit: Create Audit
+            document.getElementById("createAuditForm").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById("btnSubmitAudit");
+                btn.disabled = true;
+                btn.innerText = "Generating...";
+
+                try {
+                    const auditName = document.getElementById("auditName").value.trim();
+                    const deptVal = document.getElementById("deptSelect").value;
+                    const locVal = document.getElementById("locationSelect").value;
+
+                    const res = await API.post("/api/audit-cycles", {
+                        auditName,
+                        departmentId: deptVal ? parseInt(deptVal) : null,
+                        locationId: locVal ? parseInt(locVal) : null
+                    });
+
+                    if (res.ok) {
+                        showToast(`Audit cycle created successfully!`, "success");
+                        document.getElementById("createAuditForm").reset();
+                        filterLocations();
+                        await loadCycles();
+                        openAudit(res.audit.auditId);
+                    }
+                } catch (err) {
+                    showToast("Failed to initiate audit: " + err.message, "error");
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = "Generate Audit Cycle & Inventory Items";
+                }
+            });
+        });
+
+        async function loadMetadata() {
+            try {
+                const res = await API.get("/api/meta");
+                if (res.ok) {
+                    allDepts = res.departments || [];
+                    allLocations = res.locations || [];
+
+                    const deptSelect = document.getElementById("deptSelect");
+                    deptSelect.innerHTML = '<option value="">All Departments (Entire Campus)</option>';
+                    allDepts.forEach(d => {
+                        const opt = document.createElement("option");
+                        opt.value = d.departmentId || d.deptId;
+                        const code = d.deptCode ? ` (${d.deptCode})` : "";
+                        opt.textContent = `${d.name || d.deptName}${code}`;
+                        deptSelect.appendChild(opt);
+                    });
+
+                    filterLocations();
+                }
+            } catch (err) {
+                console.error("Error loading metadata:", err);
+                showToast("Failed to load departments and locations", "error");
+            }
+        }
+
+        function filterLocations() {
+            const deptVal = document.getElementById("deptSelect").value;
+            const deptId = deptVal ? parseInt(deptVal) : null;
+            const locSelect = document.getElementById("locationSelect");
+            locSelect.innerHTML = '<option value="">All Rooms / Labs</option>';
+
+            const filtered = deptId 
+                ? allLocations.filter(l => l.department && ((l.department.departmentId === deptId) || (l.department.deptId === deptId)))
+                : allLocations;
+
+            filtered.forEach(l => {
+                const opt = document.createElement("option");
+                opt.value = l.locationId;
+                const deptText = (!deptId && l.department) ? ` [${l.department.name || l.department.deptName || ''}]` : '';
+                opt.textContent = `${l.name || l.roomNumber || 'Room'} (${l.locationCode || 'LOC'})${deptText}`;
+                locSelect.appendChild(opt);
+            });
+        }
+
+        async function loadCycles() {
+            try {
+                const res = await API.get("/api/audit-cycles");
+                const tbody = document.getElementById("auditCycleBody");
+
+                if (res.ok && res.audits) {
+                    allCycles = res.audits;
+                    if (allCycles.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 32px;">No audit cycles logged yet. Click the "New Audit Session" tab above to initiate one.</td></tr>`;
+                        return;
+                    }
+
+                    tbody.innerHTML = allCycles.map(c => {
+                        const dept = c.department ? (c.department.name || c.department.deptName) : "All Departments";
+                        const loc = c.location ? (c.location.name || c.location.roomNumber) : "All Rooms";
+                        const statusBadge = c.auditStatus === "completed" ? "badge-available" : "badge-pending_approval";
+
+                        return `
+                            <tr>
+                                <td style="font-family: monospace; font-weight: 700; color: var(--primary);">#AUD-${c.auditId}</td>
+                                <td style="font-weight: 600;">${c.auditName}</td>
+                                <td>${dept}</td>
+                                <td>${loc}</td>
+                                <td><span class="badge ${statusBadge}">${c.auditStatus.toUpperCase()}</span></td>
+                                <td style="font-size: 12.5px;">${c.createdBy ? (c.createdBy.fullName || c.createdBy.username) : '—'}</td>
+                                <td style="font-size: 12.5px; color: var(--text-secondary);">${formatDate(c.createdAt)}</td>
+                                <td>
+                                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;" onclick="openAudit(${c.auditId})">Inspect Items</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join("");
+                }
+            } catch (err) {
+                showToast("Failed to load audit cycles: " + err.message, "error");
+            }
+        }
+
+        async function openAudit(auditId) {
+            try {
+                const audit = allCycles.find(c => c.auditId === auditId);
+                activeAudit = audit;
+
+                const res = await API.get(`/api/audit-cycles/${auditId}/items`);
+                if (res.ok && res.items) {
+                    activeItems = res.items;
+
+                    document.getElementById("activeAuditTitle").innerText = audit ? audit.auditName : `Audit #${auditId}`;
+                    const dept = audit && audit.department ? (audit.department.name || audit.department.deptName) : "All Departments";
+                    const loc = audit && audit.location ? (audit.location.name || audit.location.roomNumber) : "All Locations";
+                    document.getElementById("activeAuditSubtitle").innerText = `Scope: ${dept} (${loc}) | Status: ${audit ? audit.auditStatus.toUpperCase() : ''}`;
+
+                    const btnComplete = document.getElementById("btnCompleteAudit");
+                    btnComplete.style.display = (audit && audit.auditStatus === "completed") ? "none" : "inline-flex";
+
+                    renderAuditItems();
+                    switchTab("items");
+                }
+            } catch (err) {
+                showToast("Failed to load audit items: " + err.message, "error");
+            }
+        }
+
+        function renderAuditItems() {
+            const tbody = document.getElementById("auditItemsBody");
+            if (activeItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 32px;">No matching assets found for this audit scope.</td></tr>`;
+                updateAuditProgress();
+                return;
+            }
+
+            tbody.innerHTML = activeItems.map(item => {
+                const a = item.asset || {};
+                const dept = a.department ? a.department.deptName : "—";
+                const loc = a.location ? a.location.roomNumber : "—";
+
+                let statusBadge = `<span class="badge badge-unassigned">UNVERIFIED</span>`;
+                if (item.verificationStatus === "found") statusBadge = `<span class="badge badge-available">FOUND</span>`;
+                else if (item.verificationStatus === "missing") statusBadge = `<span class="badge badge-disposed">MISSING</span>`;
+                else if (item.verificationStatus === "damaged") statusBadge = `<span class="badge badge-maintenance">DAMAGED</span>`;
+                else if (item.verificationStatus === "misplaced") statusBadge = `<span class="badge badge-pending_approval">MISPLACED</span>`;
+                else if (item.verificationStatus === "not_accessible") statusBadge = `<span class="badge badge-unassigned">INACCESSIBLE</span>`;
+
+                return `
+                    <tr id="row-item-${item.auditItemId}">
+                        <td style="font-family: monospace; font-weight: 700; color: var(--primary);">${a.assetCode || '—'}</td>
+                        <td style="font-weight: 600;">${a.name || '—'}</td>
+                        <td style="font-size: 12.5px;">${a.category ? a.category.categoryName : '—'}</td>
+                        <td style="font-size: 12.5px;">${loc}</td>
+                        <td>${statusBadge}</td>
+                        <td style="font-size: 12px; color: var(--text-secondary);">${item.scannedAt ? formatDate(item.scannedAt) : '—'}</td>
+                        <td style="font-size: 12px; color: var(--text-muted);">${item.comments || '—'}</td>
+                        <td>
+                            <div class="verify-btn-group">
+                                <button type="button" class="verify-btn btn-found" title="Asset present and good" onclick="verifyItem(${item.auditItemId}, 'found')">Found</button>
+                                <button type="button" class="verify-btn btn-missing" title="Asset physically not found" onclick="verifyItem(${item.auditItemId}, 'missing')">Missing</button>
+                                <button type="button" class="verify-btn btn-damaged" title="Asset physically present but broken" onclick="verifyItem(${item.auditItemId}, 'damaged')">Damaged</button>
+                                <button type="button" class="verify-btn btn-misplaced" title="Asset in different room" onclick="verifyItem(${item.auditItemId}, 'misplaced')">Misplaced</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+
+            updateAuditProgress();
+        }
+
+        function updateAuditProgress() {
+            const total = activeItems.length;
+            let found = 0, missing = 0, damaged = 0, other = 0;
+
+            activeItems.forEach(i => {
+                if (i.verificationStatus === "found") found++;
+                else if (i.verificationStatus === "missing") missing++;
+                else if (i.verificationStatus === "damaged") damaged++;
+                else if (i.verificationStatus) other++;
+            });
+
+            const verified = found + missing + damaged + other;
+            const pct = total > 0 ? Math.round((verified / total) * 100) : 0;
+
+            document.getElementById("auditProgressLabel").innerText = `Audit Progress: ${verified} of ${total} verified (${pct}%)`;
+            document.getElementById("auditProgressBreakdown").innerText = `Found: ${found} | Missing: ${missing} | Damaged: ${damaged} | Misplaced: ${other}`;
+
+            if (total > 0) {
+                document.getElementById("progFound").style.width = (found / total * 100) + "%";
+                document.getElementById("progMissing").style.width = (missing / total * 100) + "%";
+                document.getElementById("progDamaged").style.width = (damaged / total * 100) + "%";
+                document.getElementById("progOther").style.width = (other / total * 100) + "%";
+            }
+        }
+
+        async function verifyItem(itemId, status, comments = "") {
+            try {
+                const res = await API.put(`/api/audit-cycles/items/${itemId}/verify`, {
+                    verificationStatus: status,
+                    comments: comments || null
+                });
+
+                if (res.ok && res.item) {
+                    showToast(`Asset marked as ${status.toUpperCase()}`, "success");
+                    // Update in local state
+                    const idx = activeItems.findIndex(i => i.auditItemId === itemId);
+                    if (idx !== -1) activeItems[idx] = res.item;
+                    renderAuditItems();
+                }
+            } catch (err) {
+                showToast("Verification failed: " + err.message, "error");
+            }
+        }
+
+        function handleQuickScan(e) {
+            if (e.key === "Enter") {
+                processQuickScan();
+            }
+        }
+
+        async function processQuickScan() {
+            const input = document.getElementById("quickScanInput");
+            const code = input.value.trim().toUpperCase();
+            const msg = document.getElementById("quickScanMsg");
+
+            if (!code) return;
+
+            const item = activeItems.find(i => i.asset && i.asset.assetCode.toUpperCase() === code);
+            if (!item) {
+                msg.style.color = "#dc2626";
+                msg.innerText = `Code ${code} is not part of this audit batch!`;
+                input.select();
+                return;
+            }
+
+            msg.style.color = "#16a34a";
+            msg.innerText = `Verified: ${item.asset.name}`;
+            await verifyItem(item.auditItemId, "found", "Verified via barcode quick-scan");
+            input.value = "";
+            input.focus();
+        }
+
+        async function completeActiveAudit() {
+            if (!activeAudit) return;
+            if (!confirm(`Are you sure you want to finalize and close audit "${activeAudit.auditName}"?`)) return;
+
+            try {
+                const res = await API.post(`/api/audit-cycles/${activeAudit.auditId}/complete`, {});
+                if (res.ok) {
+                    showToast("Audit cycle finalized and completed successfully!", "success");
+                    await loadCycles();
+                    switchTab("audits");
+                }
+            } catch (err) {
+                showToast("Failed to finalize audit: " + err.message, "error");
+            }
+        }
+
+        function switchTab(tab) {
+            const tabAuditsBtn = document.getElementById("tabAuditsBtn");
+            const tabItemsBtn  = document.getElementById("tabItemsBtn");
+            const tabNewBtn    = document.getElementById("tabNewBtn");
+
+            const panelAudits = document.getElementById("panelAudits");
+            const panelItems  = document.getElementById("panelItems");
+            const panelNew    = document.getElementById("panelNew");
+
+            tabAuditsBtn.classList.remove("active");
+            tabItemsBtn.classList.remove("active");
+            tabNewBtn.classList.remove("active");
+
+            panelAudits.style.display = "none";
+            panelItems.style.display = "none";
+            panelNew.style.display = "none";
+
+            if (tab === "items") {
+                tabItemsBtn.style.display = "inline-block";
+                tabItemsBtn.classList.add("active");
+                panelItems.style.display = "block";
+            } else if (tab === "new") {
+                tabNewBtn.classList.add("active");
+                panelNew.style.display = "block";
+            } else {
+                tabAuditsBtn.classList.add("active");
+                panelAudits.style.display = "block";
+            }
+        }
+    </script>
+</body>
+</html>
