@@ -1,7 +1,7 @@
 # MMCOE Department Asset Tracking & Barcode Scanning System
 
 **Institutional Asset Management, Barcode/QR Generation & Verification System**  
-*Integrated Modules 2 through 9 — Clean, Unified Architecture*
+
 
 ---
 
